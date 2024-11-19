@@ -1,12 +1,12 @@
 import React from "react";
 import axios from "axios";
-import { redirect } from "react-router-dom";
 import myImage from "./assets/images/Login-Image.jpg";
 import logoSatriaUnsri from "./assets/images/Satria Unsri.png";
+import logoUnsri from "./assets/images/unsri.png";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function login() {
+function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
@@ -47,7 +47,14 @@ function login() {
         <img src={myImage} alt="nft-blockchain" className="w-full h-full" />
       </div>
       <div className="w-1/2 h-full flex flex-col p-16">
-        <img className="w-1/2" src={logoSatriaUnsri} alt="logo satria Unsri" />
+        <div className="flex justify-between items-center">
+          <img
+            className="w-1/2"
+            src={logoSatriaUnsri}
+            alt="logo satria Unsri"
+          />
+          <img className="w-[90px]" src={logoUnsri} alt="logo Universitas Sriwijaya" />
+        </div>
         <div className="w-full flex flex-col pl-7 mt-20">
           <div className="w-full flex flex-col mb-2">
             <h3 className="text-3xl font-semibold mb-2">Login</h3>
@@ -83,4 +90,4 @@ function login() {
   );
 }
 
-export default login;
+export default Login;
