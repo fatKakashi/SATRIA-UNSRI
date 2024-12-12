@@ -1,31 +1,50 @@
-import React from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import myImage from "./assets/images/Login-Image.jpg";
 import logoSatriaUnsri from "./assets/images/Satria Unsri.png";
 import logoUnsri from "./assets/images/unsri.png";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function Login() {
+function Login({ onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
+  const [showPopup, setShowPopup] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (event) => {
+  const handleLogin = async (event) => {
     event.preventDefault();
-    console.log(username, password);
-    axios
-      .post("http://localhost:3001", { username, password })
-      .then((result) => {
-        console.log(result);
-        if (result.data.message === "Login success") {
-          navigate("/checkdatamahasiswa");
-        }
-      })
-      .catch((err) => console.error(err));
+    try{
+      const response = await axios.post("http://localhost:3001", { username, password });
+      if (response.data.message === "Login success") {
+        onLogin(response.data.username, response.data.nim);
+        navigate("/checkdatamahasiswa");
+      } else {
+        setPopupMessage("Incorrect username or password.");
+        setShowPopup(true);
+      }
+    } catch (error) {
+      console.error(error);
+      setPopupMessage("An error occurred. Please try again.");
+      setShowPopup(true);
+    }
   };
+
   return (
     <div className="w-full h-screen flex items-start">
+      {showPopup && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-4 rounded shadow-lg flex flex-col justify-center">
+            <p>{popupMessage}</p>
+            <button
+              onClick={() => setShowPopup(false)}
+              className="mt-4 bg-yellow-400 p-2 rounded"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
       <div className="relative w-1/2 h-full flex flex-col">
         <div className="absolute top-[20%] left-[25%] flex flex-col">
           <h1 className="text-4xl bold text-white font-extrabold my-2">
@@ -65,13 +84,13 @@ function Login() {
           <form onSubmit={handleLogin}>
             <div className="w-full flex flex-col">
               <input
-                onChange={(username) => setUsername(username.target.value)}
+                onChange={(e) => setUsername(e.target.value)}
                 type="text"
                 placeholder="Username"
                 className="w-full text-black py-2 my-2 bg-transparent border-b border-black outline-none focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500 focus:rounded-lg focus:px-2 transition-all duration-300"
               />
               <input
-                onChange={(password) => setPassword(password.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 type="password"
                 placeholder="Password"
                 className="w-full text-black py-2 my-2 bg-transparent border-b border-black outline-none focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500 focus:rounded-lg focus:px-2 transition-all duration-300"
