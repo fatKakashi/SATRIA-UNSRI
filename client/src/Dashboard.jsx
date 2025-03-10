@@ -1,14 +1,33 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { User, HomeIcon as House, Upload, LogOut, CloudDownload, X } from 'lucide-react';
 import logoSatriaUnsri from "./assets/images/Satria Unsri.png";
 import { useNavigate } from "react-router-dom";
 import imageDefault from "./assets/images/default image.jpg";
 import { StudentContext } from "./StudentContext.jsx";
+import axios from "axios";
 
 const Dashboard = ({ walletAddress }) => {
   const [selectedNFT, setSelectedNFT] = useState(null);
   const navigate = useNavigate();
-  const { studentData } = useContext(StudentContext);
+  const { studentData, setStudentData } = useContext(StudentContext);
+
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      try {
+        const nim = localStorage.getItem("nim");
+        if (nim) {
+          const response = await axios.get(`http://localhost:3001/checkdatamahasiswa/${nim}`);
+          setStudentData(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching student data:", error);
+      }
+    };
+
+    if (!studentData) {
+      fetchStudentData();
+    }
+  }, [studentData, setStudentData]);
 
   const handleLogout = () => {
     navigate("/");
@@ -38,7 +57,6 @@ const Dashboard = ({ walletAddress }) => {
   };
 
   // Data placeholder untuk NFT overview
-
   const nftOverview = Array(8)
     .fill()
     .map((_, index) => ({
@@ -116,7 +134,9 @@ const Dashboard = ({ walletAddress }) => {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-2xl font-bold">Selamat Datang, {studentData.name.split(" ").pop()}</h1>
+            <h1 className="text-2xl font-bold">
+              Selamat Datang, {studentData ? studentData.name.split(" ").pop() : "Loading..."}
+            </h1>
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 bg-yellow-300 rounded-full text-sm">
                 Connected
@@ -247,4 +267,3 @@ const Dashboard = ({ walletAddress }) => {
 };
 
 export default Dashboard;
-

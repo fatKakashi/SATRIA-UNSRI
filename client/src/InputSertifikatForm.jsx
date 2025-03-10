@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   User,
   Home,
@@ -10,10 +10,36 @@ import {
 import { useNavigate } from "react-router-dom";
 import logoSatriaUnsri from "./assets/images/Satria Unsri.png";
 import { StudentContext } from "./StudentContext.jsx";
+import axios from "axios";
 
 const InputSertifikatForm = ({ walletAddress }) => {
   const Navigate = useNavigate();
-  const { studentData } = useContext(StudentContext);
+  const { studentData, setStudentData } = useContext(StudentContext);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      try {
+        const nim = localStorage.getItem("nim");
+        if (nim) {
+          const response = await axios.get(
+            `http://localhost:3001/checkdatamahasiswa/${nim}`
+          );
+          setStudentData(response.data);
+        }
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching student data:", error);
+        setLoading(false);
+      }
+    };
+
+    if (!studentData) {
+      fetchStudentData();
+    } else {
+      setLoading(false);
+    }
+  }, [studentData, setStudentData]);
 
   const handleDashboard = () => {
     Navigate("/dashboard");
@@ -40,6 +66,8 @@ const InputSertifikatForm = ({ walletAddress }) => {
     namaSeminar: "",
     posisi: "",
     penyelenggara: "",
+    namaPerusahaan: "",
+    jabatan: "",
   });
 
   const formTypes = [
@@ -64,13 +92,90 @@ const InputSertifikatForm = ({ walletAddress }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
+
+    if (!studentData) {
+      console.error("Student data is not available");
+      return;
+    }
+    const data = new FormData();
+    for (const key in formData) {
+      data.append(key, formData[key]);
+    }
+    data.append("nim", studentData.nim);
+
+    let endpoint;
+    switch (selectedFormType) {
+      case "Magang/Studi Independen":
+        endpoint =
+          "http://localhost:3001/api/sertifikat/magang-studi-independen";
+        break;
+      case "Organisasi":
+        endpoint = "http://localhost:3001/api/sertifikat/organisasi";
+        break;
+      case "Seminar Keilmuan":
+        endpoint = "http://localhost:3001/api/sertifikat/seminar-keilmuan";
+        break;
+      default:
+        endpoint = "http://localhost:3001/api/sertifikat/prestasi-lomba";
+    }
+
+    try {
+      const response = await axios.post(endpoint, data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      console.log(response.data);
+    } catch (error) {
+      console.log("Error submitting form:", error);
+      if (error.response) {
+        console.log("Server responded with:", error.response.data);
+      }
+    }
   };
 
   const renderFormFields = () => {
     switch (selectedFormType) {
+      case "Magang/Studi Independen":
+        return (
+          <>
+            <div>
+              <label className="block mb-2">Nama Perusahaan/Mitra</label>
+              <input
+                type="text"
+                name="namaPerusahaan"
+                value={formData.namaPerusahaan}
+                onChange={handleInputChange}
+                placeholder="Masukkan nama perusahaan"
+                className="w-full p-3 rounded-lg bg-white text-black"
+              />
+            </div>
+            <div>
+              <label className="block mb-2">Posisi</label>
+              <input
+                type="text"
+                name="posisi"
+                value={formData.posisi}
+                onChange={handleInputChange}
+                placeholder="Masukkan posisi"
+                className="w-full p-3 rounded-lg bg-white text-black"
+              />
+            </div>
+            <div>
+              <label className="block mb-2">Tahun</label>
+              <input
+                type="text"
+                name="tahunKegiatan"
+                value={formData.tahunKegiatan}
+                onChange={handleInputChange}
+                placeholder="Masukkan tahun"
+                className="w-full p-3 rounded-lg bg-white text-black"
+              />
+            </div>
+          </>
+        );
       case "Organisasi":
         return (
           <>
@@ -100,11 +205,11 @@ const InputSertifikatForm = ({ walletAddress }) => {
               </select>
             </div>
             <div>
-              <label className="block mb-2">Posisi</label>
+              <label className="block mb-2">Jabatan</label>
               <input
                 type="text"
-                name="posisi"
-                value={formData.posisi}
+                name="jabatan"
+                value={formData.jabatan}
                 onChange={handleInputChange}
                 placeholder="Masukkan posisi"
                 className="w-full p-3 rounded-lg bg-white text-black"
@@ -141,7 +246,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
               <label className="block mb-2">Penyelenggara</label>
               <input
                 type="text"
-                name="penyelelnggara"
+                name="penyelenggara"
                 value={formData.penyelenggara}
                 onChange={handleInputChange}
                 placeholder="Masukkan nama penyelenggara"
@@ -192,7 +297,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
               <label className="block mb-2">Penyelenggara</label>
               <input
                 type="text"
-                name="penyelelnggara"
+                name="penyelenggara"
                 value={formData.penyelenggara}
                 onChange={handleInputChange}
                 placeholder="Masukkan nama penyelenggara"
@@ -228,6 +333,10 @@ const InputSertifikatForm = ({ walletAddress }) => {
         );
     }
   };
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <div className="flex h-screen bg-white">

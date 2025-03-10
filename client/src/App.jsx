@@ -8,6 +8,8 @@ import InputSertifikatForm from "./InputSertifikatForm";
 import Minting from "./Minting";
 import SertifikatPrestasi from "./SertifikatPrestasi";
 import SertifikatMagang from "./SertifikatMagang";
+import SertifikatSeminar from "./SertifikatSeminar";
+import SertifikatOrganisasi from "./SertifikatOrganisasi";
 import { StudentProvider } from "./StudentContext";
 
 function App() {
@@ -51,8 +53,11 @@ function App() {
             path="/minting"
             element={<Minting walletAddress={walletAddress} />}
           />
-          <Route path="/sertifikat-prestasi" element={<SertifikatPrestasi />} />
-          <Route path="/sertifikat-magang" element={<SertifikatMagang />} />
+          <Route path="/sertifikat-prestasi/:id" element={<SertifikatPrestasi />} />
+          <Route path="/sertifikat-magang/:id" element={<SertifikatMagang />} />
+          <Route path="/sertifikat-seminar/:id" element={<SertifikatSeminar />} />
+          <Route path="/sertifikat-organisasi/:id" element={<SertifikatOrganisasi />}
+          />
         </Routes>
       </BrowserRouter>
     </StudentProvider>

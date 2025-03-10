@@ -14,8 +14,8 @@ function Login({ onLogin }) {
 
   const handleLogin = async (event) => {
     event.preventDefault();
-    try{
-      const response = await axios.post("http://localhost:3001", { username, password });
+    try {
+      const response = await axios.post("http://localhost:3001/login", { username, password });
       if (response.data.message === "Login success") {
         onLogin(response.data.username, response.data.nim);
         navigate("/checkdatamahasiswa");
