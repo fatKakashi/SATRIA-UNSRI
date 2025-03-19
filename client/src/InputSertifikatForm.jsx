@@ -150,6 +150,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 onChange={handleInputChange}
                 placeholder="Masukkan nama perusahaan"
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
               />
             </div>
             <div>
@@ -161,6 +162,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 onChange={handleInputChange}
                 placeholder="Masukkan posisi"
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
               />
             </div>
             <div>
@@ -172,6 +174,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 onChange={handleInputChange}
                 placeholder="Masukkan tahun"
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
               />
             </div>
           </>
@@ -188,6 +191,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 onChange={handleInputChange}
                 placeholder="Masukkan nama organisasi"
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
               />
             </div>
             <div>
@@ -197,6 +201,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 value={formData.tingkat}
                 onChange={handleInputChange}
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
               >
                 <option value="">Pilih Tingkat</option>
                 <option value="universitas">Universitas</option>
@@ -213,6 +218,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 onChange={handleInputChange}
                 placeholder="Masukkan posisi"
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
               />
             </div>
             <div>
@@ -224,6 +230,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 onChange={handleInputChange}
                 placeholder="Masukkan tahun"
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
               />
             </div>
           </>
@@ -240,6 +247,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 onChange={handleInputChange}
                 placeholder="Masukkan nama seminar"
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
               />
             </div>
             <div>
@@ -251,6 +259,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 onChange={handleInputChange}
                 placeholder="Masukkan nama penyelenggara"
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
               />
             </div>
             <div>
@@ -262,6 +271,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 onChange={handleInputChange}
                 placeholder="Masukkan tahun"
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
               />
             </div>
           </>
@@ -276,6 +286,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 value={formData.prestasiLomba}
                 onChange={handleInputChange}
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
               >
                 <option value="">Pilih Prestasi Lomba</option>
                 <option value="akademik">Akademik</option>
@@ -291,6 +302,19 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 onChange={handleInputChange}
                 placeholder="Masukkan nama kegiatan"
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
+              />
+            </div>
+            <div>
+              <label className="block mb-2">Tahun</label>
+              <input
+                type="text"
+                name="tahunKegiatan"
+                value={formData.tahunKegiatan}
+                onChange={handleInputChange}
+                placeholder="Masukkan tahun"
+                className="w-full p-3 rounded-lg bg-white text-black"
+                required
               />
             </div>
             <div>
@@ -302,6 +326,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 onChange={handleInputChange}
                 placeholder="Masukkan nama penyelenggara"
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
               />
             </div>
             <div>
@@ -311,6 +336,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 value={formData.tingkat}
                 onChange={handleInputChange}
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
               >
                 <option value="">Pilih Tingkat</option>
                 <option value="universitas">Universitas</option>
@@ -327,6 +353,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
                 onChange={handleInputChange}
                 placeholder="Masukkan nama prestasi"
                 className="w-full p-3 rounded-lg bg-white text-black"
+                required
               />
             </div>
           </>

@@ -6,7 +6,7 @@ const sertifikatPrestasiSchema = new mongoose.Schema({
         enum: ["akademik", "non-akademik"],
     },
     namaKegiatan: String,
-    tahun: String,
+    tahunKegiatan: String,
     penyelenggara: String,
     nim: String,
     studentName: String,
@@ -27,6 +27,7 @@ const sertifikatPrestasiSchema = new mongoose.Schema({
         default: "prestasi_lomba"
     },
     imageUrl:  String,
+    metadataUrl: String,
 });
 
 const sertifikatPrestasiModel = mongoose.model("SertifikatPrestasi", sertifikatPrestasiSchema);

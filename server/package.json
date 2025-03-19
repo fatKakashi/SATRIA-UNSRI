@@ -11,6 +11,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@pinata/sdk": "^2.1.0",
+    "base-64": "^1.0.0",
     "cors": "^2.8.5",
     "express": "^4.21.1",
     "ipfs-http-client": "^60.0.1",

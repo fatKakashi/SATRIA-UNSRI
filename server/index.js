@@ -6,6 +6,8 @@ const path = require("path");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const puppeteer = require("puppeteer");
+const { uploadFileToIPFS, uploadJSONToIPFS } = require("./ipfsHelper"); // Import our helper
+
 const AccountsModel = require("./models/Accounts");
 const StudentsModel = require("./models/Students");
 const SertifikatPrestasiModel = require("./models/SertifikatPrestasi");
@@ -93,12 +95,8 @@ app.post(
         ...certificateData,
         nim,
         studentName: student.name,
-        fotoSertifikat: req.files.fotoSertifikat
-          ? req.files.fotoSertifikat[0].path
-          : null,
-        dokumenPendukung: req.files.dokumenPendukung
-          ? req.files.dokumenPendukung[0].path
-          : null,
+        fotoSertifikat: req.files.fotoSertifikat ? req.files.fotoSertifikat[0].path : null,
+        dokumenPendukung: req.files.dokumenPendukung ? req.files.dokumenPendukung[0].path : null,
       });
 
       await newSertifikat.save();
@@ -127,12 +125,8 @@ app.post(
         ...certificateData,
         nim,
         studentName: student.name,
-        fotoSertifikat: req.files.fotoSertifikat
-          ? req.files.fotoSertifikat[0].path
-          : null,
-        dokumenPendukung: req.files.dokumenPendukung
-          ? req.files.dokumenPendukung[0].path
-          : null,
+        fotoSertifikat: req.files.fotoSertifikat ? req.files.fotoSertifikat[0].path : null,
+        dokumenPendukung: req.files.dokumenPendukung ? req.files.dokumenPendukung[0].path : null,
       });
       await newSertifikat.save();
       res.status(201).json(newSertifikat);
@@ -160,12 +154,8 @@ app.post(
         ...certificateData,
         nim,
         studentName: student.name,
-        fotoSertifikat: req.files.fotoSertifikat
-          ? req.files.fotoSertifikat[0].path
-          : null,
-        dokumenPendukung: req.files.dokumenPendukung
-          ? req.files.dokumenPendukung[0].path
-          : null,
+        fotoSertifikat: req.files.fotoSertifikat ? req.files.fotoSertifikat[0].path : null,
+        dokumenPendukung: req.files.dokumenPendukung ? req.files.dokumenPendukung[0].path : null,
       });
       await newSertifikat.save();
       res.status(201).json(newSertifikat);
@@ -193,12 +183,8 @@ app.post(
         ...certificateData,
         nim,
         studentName: student.name,
-        fotoSertifikat: req.files.fotoSertifikat
-          ? req.files.fotoSertifikat[0].path
-          : null,
-        dokumenPendukung: req.files.dokumenPendukung
-          ? req.files.dokumenPendukung[0].path
-          : null,
+        fotoSertifikat: req.files.fotoSertifikat ? req.files.fotoSertifikat[0].path : null,
+        dokumenPendukung: req.files.dokumenPendukung ? req.files.dokumenPendukung[0].path : null,
       });
       await newSertifikat.save();
       res.status(201).json(newSertifikat);
@@ -217,15 +203,13 @@ app.get("/api/submissions", async (req, res) => {
     const keilmuan = await sertifikatKeilmuanModel.find();
     const mbkm = await sertifikatMBKMModel.find();
 
-    const submissions = [...prestasi, ...organisasi, ...keilmuan, ...mbkm].map(
-      (submission) => {
-        return {
-          ...submission._doc,
-          fotoSertifikat: submission.fotoSertifikat.replace(/\\/g, "/"),
-          dokumenPendukung: submission.dokumenPendukung.replace(/\\/g, "/"),
-        };
-      }
-    );
+    const submissions = [...prestasi, ...organisasi, ...keilmuan, ...mbkm].map((submission) => {
+      return {
+        ...submission._doc,
+        fotoSertifikat: submission.fotoSertifikat.replace(/\\/g, "/"),
+        dokumenPendukung: submission.dokumenPendukung.replace(/\\/g, "/"),
+      };
+    });
 
     res.status(200).json(submissions);
   } catch (error) {
@@ -241,15 +225,13 @@ app.get("/api/submissions/approved", async (req, res) => {
     const keilmuan = await sertifikatKeilmuanModel.find({ status: "approved" });
     const mbkm = await sertifikatMBKMModel.find({ status: "approved" });
 
-    const submissions = [...prestasi, ...organisasi, ...keilmuan, ...mbkm].map(
-      (submission) => {
-        return {
-          ...submission._doc,
-          fotoSertifikat: submission.fotoSertifikat ? submission.fotoSertifikat.replace(/\\/g, "/") : null,
-          dokumenPendukung: submission.dokumenPendukung ? submission.dokumenPendukung.replace(/\\/g, "/") : null,
-        };
-      }
-    );
+    const submissions = [...prestasi, ...organisasi, ...keilmuan, ...mbkm].map((submission) => {
+      return {
+        ...submission._doc,
+        fotoSertifikat: submission.fotoSertifikat ? submission.fotoSertifikat.replace(/\\/g, "/") : null,
+        dokumenPendukung: submission.dokumenPendukung ? submission.dokumenPendukung.replace(/\\/g, "/") : null,
+      };
+    });
 
     res.status(200).json(submissions);
   } catch (error) {
@@ -258,6 +240,7 @@ app.get("/api/submissions/approved", async (req, res) => {
   }
 });
 
+// Updated approval endpoint integrating IPFS upload
 app.put("/api/submissions/:id/status", async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -311,21 +294,18 @@ app.put("/api/submissions/:id/status", async (req, res) => {
       
       await page.goto(certificateUrl, {
         waitUntil: "networkidle2",
-        timeout: 60000 // 60 seconds timeout
+        timeout: 60000
       });
 
-      // Ensure the page is fully loaded
       await page.waitForFunction(() => document.readyState === "complete", { timeout: 30000 });
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Select the certificate container
       const certificateElement = await page.$("#certificate-container");
       if (!certificateElement) {
         throw new Error("Certificate container not found");
       }
       const boundingBox = await certificateElement.boundingBox();
 
-      // Capture screenshot with clip option using the bounding box
       const imageBuffer = await page.screenshot({
         type: "png",
         clip: {
@@ -341,13 +321,36 @@ app.put("/api/submissions/:id/status", async (req, res) => {
       const imageName = `certificate-${id}-${uuidv4()}.png`;
       const imagePath = path.join(uploadDir, imageName);
 
+      // Save the image locally
       fs.writeFileSync(imagePath, imageBuffer);
 
-      const imageUrl = `/uploads/${imageName}`;
-      submission.imageUrl = imageUrl;
+      // Upload the image to IPFS using Pinata
+      const imageResult = await uploadFileToIPFS(imagePath);
+
+      // Create metadata with gateway URLs
+      const metadata = {
+        name: `${submission.studentName}'s Certificate`,
+        description: `Certificate for ${submission.type} achievement`,
+        image: imageResult.gatewayUrl, // Use gateway URL for image
+        external_url: imageResult.gatewayUrl,
+        attributes: [
+          { trait_type: "Type", value: submission.type },
+          { trait_type: "Year", value: submission.tahunKegiatan || "N/A" }
+        ]
+      };
+
+      // Upload metadata to IPFS using Pinata
+      const metadataResult = await uploadJSONToIPFS(metadata);
+
+      // Update submission with both IPFS URI and gateway URL
+      submission.imageUrl = imageResult.gatewayUrl;
+      submission.metadataUrl = metadataResult.ipfsUri; // Keep using ipfs:// for contract
+      submission.imageGatewayUrl = imageResult.gatewayUrl;
+      submission.metadataGatewayUrl = metadataResult.gatewayUrl;
       await submission.save();
       
-      console.log(`Certificate generated and saved as ${imageName}`);
+      console.log(`Metadata uploaded to IPFS: ${metadataResult.ipfsUri}`);
+      console.log(`Metadata gateway URL: ${metadataResult.gatewayUrl}`);
     }
 
     res.status(200).json(submission);

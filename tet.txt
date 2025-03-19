@@ -1,371 +1,330 @@
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const { v4: uuidv4 } = require("uuid");
-const puppeteer = require("puppeteer");
-const { uploadFileToIPFS } = require("./ipfsHelper"); // Import the helper
+"use client"
+import { useContext, useState, useEffect } from "react"
+import { LogOut, HomeIcon as House, Upload, CloudDownload, X, User, BadgeIcon as Certificate } from "lucide-react"
+import imageDefault from "./assets/images/default image.jpg"
+import logoSatriaUnsri from "./assets/images/Satria Unsri.png"
+import { useNavigate } from "react-router-dom"
+import { StudentContext } from "./StudentContext.jsx"
+import axios from "axios"
+import { getContract } from "./blockchainFoundation.js"
 
-const AccountsModel = require("./models/Accounts");
-const StudentsModel = require("./models/Students");
-const SertifikatPrestasiModel = require("./models/SertifikatPrestasi");
-const SertifikatOrganisasiModel = require("./models/SertifikatOrganisasi");
-const sertifikatKeilmuanModel = require("./models/SertifikatKeilmuan");
-const sertifikatMBKMModel = require("./models/SertifikatMBKM");
-
-const app = express();
-app.use(express.json());
-app.use(cors());
-
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
+const getGatewayUrl = (url) => {
+  if (!url) return ""
+  if (url.startsWith("ipfs://")) {
+    return url.replace("ipfs://", "https://ipfs.io/ipfs/")
+  }
+  return url
 }
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-const upload = multer({ storage });
+const Minting = ({ walletAddress }) => {
+  const [approvedSubmissions, setApprovedSubmissions] = useState([])
+  const [selectedNFT, setSelectedNFT] = useState(null)
+  const [isMinting, setIsMinting] = useState(false)
+  const [showTerms, setShowTerms] = useState(false)
+  const [hasAgreed, setHasAgreed] = useState(false)
+  const { studentData, setStudentData } = useContext(StudentContext)
+  const [loading, setLoading] = useState(true)
+  const [metadataImageUrls, setMetadataImageUrls] = useState({})
+  const Navigate = useNavigate()
 
-mongoose
-  .connect("mongodb://localhost:27017/SATRIA_UNSRI")
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((error) => console.log(error));
-
-// Define the login route
-app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
-  try {
-    const user = await AccountsModel.findOne({ username, password });
-    if (user) {
-      res.status(200).json({
-        message: "Login success",
-        username: user.username,
-        nim: user.nim,
-      });
-    } else {
-      res.status(401).json({ message: "Incorrect username or password" });
-    }
-  } catch (error) {
-    console.error("Error during login:", error);
-    res.status(500).json({ message: "An error occurred", error });
-  }
-});
-
-// Define the route to fetch student data
-app.get("/checkdatamahasiswa/:nim", async (req, res) => {
-  const { nim } = req.params;
-  try {
-    const student = await StudentsModel.findOne({ nim });
-    if (student) {
-      res.status(200).json(student);
-    } else {
-      res.status(404).json({ message: "Student not found" });
-    }
-  } catch (error) {
-    console.error("Error fetching student data:", error);
-    res.status(500).json({ message: "An error occurred", error });
-  }
-});
-
-app.post(
-  "/api/sertifikat/prestasi-lomba",
-  upload.fields([
-    { name: "fotoSertifikat", maxCount: 1 },
-    { name: "dokumenPendukung", maxCount: 1 },
-  ]),
-  async (req, res) => {
-    try {
-      const { nim, ...certificateData } = req.body;
-      const student = await StudentsModel.findOne({ nim });
-      if (!student) {
-        return res.status(404).send({ message: "Student not found" });
-      }
-      const newSertifikat = new SertifikatPrestasiModel({
-        ...certificateData,
-        nim,
-        studentName: student.name,
-        fotoSertifikat: req.files.fotoSertifikat
-          ? req.files.fotoSertifikat[0].path
-          : null,
-        dokumenPendukung: req.files.dokumenPendukung
-          ? req.files.dokumenPendukung[0].path
-          : null,
-      });
-
-      await newSertifikat.save();
-      res.status(201).json(newSertifikat);
-    } catch (error) {
-      console.error("Error saving certificate:", error);
-      res.status(500).send({ message: "An error occurred", error });
-    }
-  }
-);
-
-app.post(
-  "/api/sertifikat/organisasi",
-  upload.fields([
-    { name: "fotoSertifikat", maxCount: 1 },
-    { name: "dokumenPendukung", maxCount: 1 },
-  ]),
-  async (req, res) => {
-    try {
-      const { nim, ...certificateData } = req.body;
-      const student = await StudentsModel.findOne({ nim });
-      if (!student) {
-        return res.status(404).send({ message: "Student not found" });
-      }
-      const newSertifikat = new SertifikatOrganisasiModel({
-        ...certificateData,
-        nim,
-        studentName: student.name,
-        fotoSertifikat: req.files.fotoSertifikat
-          ? req.files.fotoSertifikat[0].path
-          : null,
-        dokumenPendukung: req.files.dokumenPendukung
-          ? req.files.dokumenPendukung[0].path
-          : null,
-      });
-      await newSertifikat.save();
-      res.status(201).json(newSertifikat);
-    } catch (error) {
-      console.error("Error saving certificate:", error);
-      res.status(500).send({ message: "An error occurred", error });
-    }
-  }
-);
-
-app.post(
-  "/api/sertifikat/magang-studi-independen",
-  upload.fields([
-    { name: "fotoSertifikat", maxCount: 1 },
-    { name: "dokumenPendukung", maxCount: 1 },
-  ]),
-  async (req, res) => {
-    try {
-      const { nim, ...certificateData } = req.body;
-      const student = await StudentsModel.findOne({ nim });
-      if (!student) {
-        return res.status(404).send({ message: "Student not found" });
-      }
-      const newSertifikat = new sertifikatMBKMModel({
-        ...certificateData,
-        nim,
-        studentName: student.name,
-        fotoSertifikat: req.files.fotoSertifikat
-          ? req.files.fotoSertifikat[0].path
-          : null,
-        dokumenPendukung: req.files.dokumenPendukung
-          ? req.files.dokumenPendukung[0].path
-          : null,
-      });
-      await newSertifikat.save();
-      res.status(201).json(newSertifikat);
-    } catch (error) {
-      console.error("Error saving certificate:", error);
-      res.status(500).send({ message: "An error occurred", error });
-    }
-  }
-);
-
-app.post(
-  "/api/sertifikat/seminar-keilmuan",
-  upload.fields([
-    { name: "fotoSertifikat", maxCount: 1 },
-    { name: "dokumenPendukung", maxCount: 1 },
-  ]),
-  async (req, res) => {
-    try {
-      const { nim, ...certificateData } = req.body;
-      const student = await StudentsModel.findOne({ nim });
-      if (!student) {
-        return res.status(404).send({ message: "Student not found" });
-      }
-      const newSertifikat = new sertifikatKeilmuanModel({
-        ...certificateData,
-        nim,
-        studentName: student.name,
-        fotoSertifikat: req.files.fotoSertifikat
-          ? req.files.fotoSertifikat[0].path
-          : null,
-        dokumenPendukung: req.files.dokumenPendukung
-          ? req.files.dokumenPendukung[0].path
-          : null,
-      });
-      await newSertifikat.save();
-      res.status(201).json(newSertifikat);
-    } catch (error) {
-      console.error("Error saving certificate:", error);
-      res.status(500).send({ message: "An error occurred", error });
-    }
-  }
-);
-
-// Endpoint to fetch all submissions
-app.get("/api/submissions", async (req, res) => {
-  try {
-    const prestasi = await SertifikatPrestasiModel.find();
-    const organisasi = await SertifikatOrganisasiModel.find();
-    const keilmuan = await sertifikatKeilmuanModel.find();
-    const mbkm = await sertifikatMBKMModel.find();
-
-    const submissions = [...prestasi, ...organisasi, ...keilmuan, ...mbkm].map(
-      (submission) => {
-        return {
-          ...submission._doc,
-          fotoSertifikat: submission.fotoSertifikat.replace(/\\/g, "/"),
-          dokumenPendukung: submission.dokumenPendukung.replace(/\\/g, "/"),
-        };
-      }
-    );
-
-    res.status(200).json(submissions);
-  } catch (error) {
-    console.error("Error fetching submissions:", error);
-    res.status(500).json({ message: "An error occurred", error });
-  }
-});
-
-app.get("/api/submissions/approved", async (req, res) => {
-  try {
-    const prestasi = await SertifikatPrestasiModel.find({ status: "approved" });
-    const organisasi = await SertifikatOrganisasiModel.find({ status: "approved" });
-    const keilmuan = await sertifikatKeilmuanModel.find({ status: "approved" });
-    const mbkm = await sertifikatMBKMModel.find({ status: "approved" });
-
-    const submissions = [...prestasi, ...organisasi, ...keilmuan, ...mbkm].map(
-      (submission) => {
-        return {
-          ...submission._doc,
-          fotoSertifikat: submission.fotoSertifikat ? submission.fotoSertifikat.replace(/\\/g, "/") : null,
-          dokumenPendukung: submission.dokumenPendukung ? submission.dokumenPendukung.replace(/\\/g, "/") : null,
-        };
-      }
-    );
-
-    res.status(200).json(submissions);
-  } catch (error) {
-    console.error("Error fetching approved submissions:", error);
-    res.status(500).json({ message: "An error occurred", error });
-  }
-});
-
-// Updated approval endpoint integrating IPFS upload
-app.put("/api/submissions/:id/status", async (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-  
-  try {
-    const submission =
-      (await SertifikatPrestasiModel.findById(id)) ||
-      (await SertifikatOrganisasiModel.findById(id)) ||
-      (await sertifikatKeilmuanModel.findById(id)) ||
-      (await sertifikatMBKMModel.findById(id));
-
-    if (!submission) {
-      return res.status(404).json({ message: "Submission not found" });
-    }
-
-    submission.status = status;
-    await submission.save();
-
-    if (status === "approved") {
-      let certificateUrl;
-      switch (submission.type) {
-        case "prestasi_lomba":
-          certificateUrl = `http://localhost:5173/sertifikat-prestasi/${id}`;
-          break;
-        case "organisasi":
-          certificateUrl = `http://localhost:5173/sertifikat-organisasi/${id}`;
-          break;
-        case "seminar_keilmuan":
-          certificateUrl = `http://localhost:5173/sertifikat-seminar/${id}`;
-          break;
-        case "magang_studi_independen":
-          certificateUrl = `http://localhost:5173/sertifikat-magang/${id}`;
-          break;
-        default:
-          throw new Error("Unknown certificate type");
-      }
-
-      console.log(`Generating certificate from: ${certificateUrl}`);
-
-      const browser = await puppeteer.launch({
-        headless: true,
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-web-security"
-        ],
-        defaultViewport: { width: 1200, height: 800 }
-      });
-
-      const page = await browser.newPage();
-      
-      await page.goto(certificateUrl, {
-        waitUntil: "networkidle2",
-        timeout: 60000 // 60 seconds timeout
-      });
-
-      // Ensure the page is fully loaded
-      await page.waitForFunction(() => document.readyState === "complete", { timeout: 30000 });
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Select the certificate container
-      const certificateElement = await page.$("#certificate-container");
-      if (!certificateElement) {
-        throw new Error("Certificate container not found");
-      }
-      const boundingBox = await certificateElement.boundingBox();
-
-      // Capture screenshot with clip option using the bounding box
-      const imageBuffer = await page.screenshot({
-        type: "png",
-        clip: {
-          x: boundingBox.x,
-          y: boundingBox.y,
-          width: boundingBox.width,
-          height: boundingBox.height
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      try {
+        const nim = localStorage.getItem("nim")
+        if (nim) {
+          const response = await axios.get(`http://localhost:3001/checkdatamahasiswa/${nim}`)
+          setStudentData(response.data)
         }
-      });
-      
-      await browser.close();
-
-      const imageName = `certificate-${id}-${uuidv4()}.png`;
-      const imagePath = path.join(uploadDir, imageName);
-
-      // Save the image locally
-      fs.writeFileSync(imagePath, imageBuffer);
-
-      // Use the helper to upload the file to IPFS
-      const ipfsUrl = await uploadFileToIPFS(imagePath);
-
-      // Update submission with the IPFS URL
-      submission.imageUrl = ipfsUrl;
-      await submission.save();
-      
-      console.log(`Certificate generated and saved as ${imageName}`);
-      console.log(`Certificate uploaded to IPFS: ${ipfsUrl}`);
+        setLoading(false)
+      } catch (error) {
+        console.error("Error fetching student data:", error)
+        setLoading(false)
+      }
     }
+    if (!studentData) {
+      fetchStudentData()
+    } else {
+      setLoading(false)
+    }
+  }, [studentData, setStudentData])
 
-    res.status(200).json(submission);
-  } catch (error) {
-    console.error("Error updating submission status:", error);
-    res.status(500).json({ message: "An error occurred", error });
+  useEffect(() => {
+    const fetchApprovedSubmissions = async () => {
+      try {
+        const response = await axios.get("http://localhost:3001/api/submissions/approved")
+        setApprovedSubmissions(response.data)
+      } catch (error) {
+        console.error("Error fetching approved submissions:", error)
+      }
+    }
+    fetchApprovedSubmissions()
+  }, [])
+
+  // Fetch metadata image URLs for all submissions
+  useEffect(() => {
+    const fetchMetadataImages = async () => {
+      const urls = {}
+      for (const submission of approvedSubmissions) {
+        if (submission.metadataUrl) {
+          try {
+            const response = await fetch(getGatewayUrl(submission.metadataUrl))
+            const metadata = await response.json()
+            urls[submission._id] = getGatewayUrl(metadata.image)
+          } catch (error) {
+            console.error(`Failed to fetch metadata for ${submission._id}:`, error)
+            urls[submission._id] = null
+          }
+        }
+      }
+      setMetadataImageUrls(urls)
+    }
+    if (approvedSubmissions.length > 0) {
+      fetchMetadataImages()
+    }
+  }, [approvedSubmissions])
+
+  const handleLogout = () => Navigate("/")
+  const handleInputSertifikat = () => Navigate("/input-sertifikat")
+  const handleDashboard = () => Navigate("/dashboard")
+
+  const openModal = (nft) => {
+    if (!hasAgreed) {
+      setShowTerms(true)
+      setSelectedNFT(nft)
+    } else {
+      setSelectedNFT(nft)
+      setIsMinting(false)
+    }
   }
-});
 
+  const closeModal = () => {
+    setSelectedNFT(null)
+    setIsMinting(false)
+    setShowTerms(false)
+  }
 
-app.listen(3001, () => {
-  console.log("Server is running on port 3001");
-});
+  const handleMint = async () => {
+    setIsMinting(true)
+    try {
+      const tokenURI = selectedNFT.metadataUrl
+      if (!tokenURI) throw new Error("Metadata not found - contact support")
+      const { contract } = await getContract()
+      const transaction = await contract.mintCertificate(walletAddress, tokenURI)
+      await transaction.wait()
+      console.log("Minting complete!")
+    } catch (error) {
+      console.error("Minting failed:", error)
+      alert(`Minting failed: ${error.message}`)
+    } finally {
+      setIsMinting(false)
+      closeModal()
+    }
+  }
+
+  const handleAgree = () => {
+    setHasAgreed(true)
+    setShowTerms(false)
+  }
+
+  if (loading) return <p>Loading...</p>
+
+  const filteredSubmissions = approvedSubmissions.filter(
+    (submission) => submission.nim === studentData?.nim
+  )
+
+  return (
+    <div className="flex min-h-screen bg-white">
+      {/* SIDEBAR */}
+      <div className="w-64 bg-yellow-300 p-6 flex flex-col fixed h-screen">
+        {/* Logo */}
+        <div className="flex items-center gap-2 mb-12">
+          <img src={logoSatriaUnsri || "/placeholder.svg"} alt="Satria UNSRI Logo" />
+        </div>
+        {/* Navigation */}
+        <nav className="flex-1">
+          <ul className="space-y-2">
+            <li>
+              <button onClick={handleDashboard} className="flex items-center gap-3 w-full p-3 rounded-lg hover:bg-gray-800 hover:text-white">
+                <House size={20} /> Dashboard
+              </button>
+            </li>
+            <li>
+              <button onClick={handleInputSertifikat} className="flex items-center gap-3 w-full p-3 rounded-lg hover:bg-gray-800 hover:text-white">
+                <Upload size={20} /> Input Sertifikat
+              </button>
+            </li>
+            <li>
+              <button className="flex items-center gap-3 w-full p-3 rounded-lg bg-gray-800 text-white">
+                <CloudDownload size={20} /> Minting
+              </button>
+            </li>
+          </ul>
+        </nav>
+        {/* User Profile */}
+        {studentData && (
+          <div className="mt-auto">
+            <div className="p-4 bg-gray-800 rounded-lg text-white">
+              <div className="flex items-center gap-3">
+                <User size={24} />
+                <div>
+                  <div className="font-medium">{studentData.name}</div>
+                  <div className="text-sm text-gray-400">{studentData.nim}</div>
+                </div>
+              </div>
+            </div>
+            <button onClick={handleLogout} className="flex items-center gap-2 w-full p-3 mt-4 rounded-lg hover:bg-gray-800 hover:text-white">
+              <LogOut size={20} /> Log Out
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1 p-8 ml-64">
+        {/* Header */}
+        <div className="flex justify-end items-center mb-8">
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1 bg-yellow-300 rounded-full text-sm">Connected</span>
+            <span className="px-3 py-1 bg-black text-white rounded-full text-sm">
+              {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : "Not Connected"}
+            </span>
+          </div>
+        </div>
+
+        {/* NFT List Section */}
+        <div className="mb-6 flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Daftar NFT Anda</h1>
+          {filteredSubmissions.length > 0 && (
+            <select className="bg-black text-white px-4 py-2 rounded-md">
+              <option>Semua Tipe NFT</option>
+              <option>Art</option>
+              <option>Collectible</option>
+            </select>
+          )}
+        </div>
+
+        {/* Empty State */}
+        {filteredSubmissions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+            <Certificate size={64} className="text-gray-400 mb-4" />
+            <h3 className="text-xl font-medium text-gray-900 mb-2">You have no certificate to mint</h3>
+            <p className="text-gray-500 text-center max-w-md mb-6">Upload your certificates through the Input Sertifikat page and wait for admin approval before minting.</p>
+            <button onClick={handleInputSertifikat} className="px-6 py-3 bg-yellow-400 text-black rounded-lg hover:bg-yellow-500 transition-colors font-medium">Upload Certificate</button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {filteredSubmissions.map((submission) => (
+              <div key={submission._id} className="border rounded-lg p-4">
+                <div
+                  className="bg-gray-100 rounded-lg mb-4 cursor-pointer flex items-center justify-center"
+                  onClick={() => openModal(submission)}
+                  style={{ height: "300px" }}
+                >
+                  <img
+                    src={
+                      metadataImageUrls[submission._id] || 
+                      (submission.imageUrl ? getGatewayUrl(submission.imageUrl) : imageDefault)
+                    }
+                    alt={`NFT ${submission._id}`}
+                    className="max-w-full max-h-full object-contain rounded-lg"
+                  />
+                </div>
+                <button
+                  className="w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition-colors"
+                  onClick={() => openModal(submission)}
+                >
+                  MINT
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Modals */}
+        {showTerms && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-lg w-full p-8">
+              <h2 className="text-2xl font-bold mb-6">Terms & Condition</h2>
+              <div className="space-y-4 mb-6">
+                <p className="text-sm">1. Sertifikat yang dihasilkan dari proses minting telah dikonversi ke dalam format NFT (Non-Fungible Token) sesuai standar blockchain Ethereum dengan mekanisme Proof of Authority.</p>
+                <p className="text-sm">2. Sertifikat yang diminting telah melalui proses validasi oleh admin universitas dan dijamin sesuai dengan data yang tersimpan dalam database lokal universitas.</p>
+                <p className="text-sm">3. Setelah proses minting selesai, sertifikat NFT akan terstandardisasi dan hanya dapat diakses melalui aplikasi SATRIA UNSRI menggunakan wallet terverifikasi pengguna.</p>
+              </div>
+              <button onClick={handleAgree} className="w-full bg-yellow-400 text-black py-3 rounded-lg hover:bg-yellow-500 transition-colors font-medium">SETUJU</button>
+            </div>
+          </div>
+        )}
+
+        {selectedNFT && !showTerms && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-4xl w-full overflow-hidden relative">
+              <button onClick={closeModal} className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded-full z-50">
+                <X size={24} />
+              </button>
+              <div className="flex flex-col md:flex-row">
+                {/* Image Side */}
+                <div className="w-full md:w-1/2 p-8 relative">
+                  <div className="relative">
+                    <img
+                      src={
+                        metadataImageUrls[selectedNFT._id] || 
+                        (selectedNFT.imageUrl ? getGatewayUrl(selectedNFT.imageUrl) : imageDefault)
+                      }
+                      alt="NFT Preview"
+                      className="w-full max-h-full object-contain rounded-lg"
+                    />
+                    {isMinting && (
+                      <>
+                        <div className="absolute inset-0 bg-white bg-opacity-30 animate-[scan_2s_ease-in-out_infinite]" />
+                        <div className="absolute inset-0">
+                          <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-white" />
+                          <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-white" />
+                          <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-white" />
+                          <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-white" />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                {/* Details Side */}
+                <div className="w-full md:w-1/2 p-8 bg-gray-50">
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Nama</h3>
+                      <p className="mt-1">{selectedNFT.studentName}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Jenis Sertifikat</h3>
+                      <p className="mt-1">{selectedNFT.type}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Tahun</h3>
+                      <p className="mt-1">{selectedNFT.tahun}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Nama Kegiatan</h3>
+                      <p className="mt-1">{selectedNFT.namaKegiatan}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">Note</h3>
+                      <p className="mt-1">{selectedNFT.note}</p>
+                    </div>
+                    <button
+                      className="w-full bg-yellow-400 text-black py-3 rounded-lg hover:bg-yellow-500 transition-colors font-medium disabled:opacity-50"
+                      onClick={handleMint}
+                      disabled={isMinting}
+                    >
+                      {isMinting ? "MINTING..." : "MINT"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}
+
+export default Minting

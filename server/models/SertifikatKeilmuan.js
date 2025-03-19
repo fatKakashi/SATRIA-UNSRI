@@ -18,6 +18,7 @@ const sertifikatKeilmuanSchema = new mongoose.Schema({
         default: "seminar_keilmuan"
     },
     imageUrl:  String,
+    metadataUrl: String,    
 });
 
 const sertifikatKeilmuanModel = mongoose.model("SertifikatKeilmuan", sertifikatKeilmuanSchema);

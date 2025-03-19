@@ -22,6 +22,7 @@ const sertifikatOrganisasiSchema = new mongoose.Schema({
         default: "organisasi"
     },
     imageUrl:  String,
+    metadataUrl: String,
 });
 
 const SertifikatOrganisasiModel = mongoose.model("SertifikatOrganisasi", sertifikatOrganisasiSchema);
