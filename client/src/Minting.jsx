@@ -1,180 +1,175 @@
-"use client";
+"use client"
 
-import { useContext, useState, useEffect } from "react";
-import {
-  LogOut,
-  HomeIcon as House,
-  Upload,
-  CloudDownload,
-  X,
-  User,
-  BadgeIcon as Certificate,
-} from "lucide-react";
-import imageDefault from "./assets/images/default image.jpg";
-import logoSatriaUnsri from "./assets/images/Satria Unsri.png";
-import { useNavigate } from "react-router-dom";
-import { StudentContext } from "./StudentContext.jsx";
-import axios from "axios";
-import { getContract } from "./blockchainFoundation.js"; // ethers helper
+import { useContext, useState, useEffect } from "react"
+import { LogOut, HomeIcon as House, Upload, CloudDownload, X, User, BadgeIcon as Certificate } from "lucide-react"
+import imageDefault from "./assets/images/default image.jpg"
+import logoSatriaUnsri from "./assets/images/Satria Unsri.png"
+import { useNavigate } from "react-router-dom"
+import { StudentContext } from "./StudentContext.jsx"
+import axios from "axios"
+import { getContract } from "./blockchainFoundation.js" // ethers helper
+import { useNotification } from "./notification.jsx"
 
 // Utility function to convert ipfs:// URL to an HTTP gateway URL
 const getGatewayUrl = (url) => {
-  if (!url) return "";
+  if (!url) return ""
   if (url.startsWith("ipfs://")) {
-    return url.replace("ipfs://", "https://ipfs.io/ipfs/");
+    return url.replace("ipfs://", "https://ipfs.io/ipfs/")
   }
-  return url;
-};
+  return url
+}
 
 const Minting = ({ walletAddress }) => {
-  const [approvedSubmissions, setApprovedSubmissions] = useState([]);
-  const [selectedNFT, setSelectedNFT] = useState(null);
-  const [isMinting, setIsMinting] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
-  const [hasAgreed, setHasAgreed] = useState(false);
-  const { studentData, setStudentData } = useContext(StudentContext);
-  const [loading, setLoading] = useState(true);
-  const [metadataImageUrls, setMetadataImageUrls] = useState([]);
-  const Navigate = useNavigate();
+  const [approvedSubmissions, setApprovedSubmissions] = useState([])
+  const [selectedNFT, setSelectedNFT] = useState(null)
+  const [isMinting, setIsMinting] = useState(false)
+  const [showTerms, setShowTerms] = useState(false)
+  const [hasAgreed, setHasAgreed] = useState(false)
+  const { studentData, setStudentData } = useContext(StudentContext)
+  const [loading, setLoading] = useState(true)
+  const [metadataImageUrls, setMetadataImageUrls] = useState([])
+  const Navigate = useNavigate()
+  const { showNotification, NotificationComponent } = useNotification()
 
   useEffect(() => {
     const fetchStudentData = async () => {
       try {
-        const nim = localStorage.getItem("nim");
+        const nim = localStorage.getItem("nim")
         if (nim) {
-          const response = await axios.get(
-            `http://localhost:3001/checkdatamahasiswa/${nim}`
-          );
-          setStudentData(response.data);
+          const response = await axios.get(`http://localhost:3001/checkdatamahasiswa/${nim}`)
+          setStudentData(response.data)
         }
-        setLoading(false);
+        setLoading(false)
       } catch (error) {
-        console.error("Error fetching student data:", error);
-        setLoading(false);
+        console.error("Error fetching student data:", error)
+        setLoading(false)
       }
-    };
+    }
 
     if (!studentData) {
-      fetchStudentData();
+      fetchStudentData()
     } else {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [studentData, setStudentData]);
+  }, [studentData, setStudentData])
 
   useEffect(() => {
     const fetchApprovedSubmissions = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:3001/api/submissions/approved"
-        );
-        setApprovedSubmissions(response.data);
+        const response = await axios.get("http://localhost:3001/api/submissions/approved")
+        setApprovedSubmissions(response.data)
       } catch (error) {
-        console.error("Error fetching approved submissions:", error);
+        console.error("Error fetching approved submissions:", error)
       }
-    };
+    }
 
-    fetchApprovedSubmissions();
-  }, []);
+    fetchApprovedSubmissions()
+  }, [])
 
   const handleLogout = () => {
-    Navigate("/");
-  };
+    Navigate("/")
+  }
 
   // Fetch metadata image URLs for all submissions
   useEffect(() => {
     const fetchMetadataImages = async () => {
-      const urls = {};
+      const urls = {}
       for (const submission of approvedSubmissions) {
         if (submission.metadataGatewayUrl) {
           // Use the gateway URL if available
           try {
-            const response = await fetch(submission.metadataGatewayUrl);
-            const metadata = await response.json();
-            urls[submission._id] = metadata.image; // This should already be a gateway URL
+            const response = await fetch(submission.metadataGatewayUrl)
+            const metadata = await response.json()
+            urls[submission._id] = metadata.image // This should already be a gateway URL
           } catch (error) {
-            console.error(
-              `Failed to fetch metadata for ${submission._id}:`,
-              error
-            );
-            urls[submission._id] = null;
+            console.error(`Failed to fetch metadata for ${submission._id}:`, error)
+            urls[submission._id] = null
           }
         } else if (submission.metadataUrl) {
           // Fallback to the old method
           try {
-            const response = await fetch(getGatewayUrl(submission.metadataUrl));
-            const metadata = await response.json();
-            urls[submission._id] = getGatewayUrl(metadata.image);
+            const response = await fetch(getGatewayUrl(submission.metadataUrl))
+            const metadata = await response.json()
+            urls[submission._id] = getGatewayUrl(metadata.image)
           } catch (error) {
-            console.error(
-              `Failed to fetch metadata for ${submission._id}:`,
-              error
-            );
-            urls[submission._id] = null;
+            console.error(`Failed to fetch metadata for ${submission._id}:`, error)
+            urls[submission._id] = null
           }
         }
       }
-      setMetadataImageUrls(urls);
-    };
-    if (approvedSubmissions.length > 0) {
-      fetchMetadataImages();
+      setMetadataImageUrls(urls)
     }
-  }, [approvedSubmissions]);
+    if (approvedSubmissions.length > 0) {
+      fetchMetadataImages()
+    }
+  }, [approvedSubmissions])
 
   const handleInputSertifikat = () => {
-    Navigate("/input-sertifikat");
-  };
+    Navigate("/input-sertifikat")
+  }
 
   const handleDashboard = () => {
-    Navigate("/dashboard");
-  };
+    Navigate("/dashboard")
+  }
 
   const openModal = (nft) => {
     if (!hasAgreed) {
-      setShowTerms(true);
-      setSelectedNFT(nft);
+      setShowTerms(true)
+      setSelectedNFT(nft)
     } else {
-      setSelectedNFT(nft);
-      setIsMinting(false);
+      setSelectedNFT(nft)
+      setIsMinting(false)
     }
-  };
+  }
 
   const closeModal = () => {
-    setSelectedNFT(null);
-    setIsMinting(false);
-    setShowTerms(false);
-  };
+    setSelectedNFT(null)
+    setIsMinting(false)
+    setShowTerms(false)
+  }
 
   // Updated handleMint function using ethers.js to call the smart contract's mintCertificate method
   const handleMint = async () => {
-    setIsMinting(true);
+    setIsMinting(true)
     try {
       // Use metadataUrl for the contract (ipfs:// format)
-      const tokenURI = selectedNFT.metadataUrl;
-  
+      const tokenURI = selectedNFT.metadataUrl
+
       if (!tokenURI) {
-        throw new Error("Metadata not found - contact support");
+        throw new Error("Metadata not found - contact support")
       }
-  
-      const { contract } = await getContract();
-      const transaction = await contract.mintCertificate(
-        walletAddress,
-        tokenURI
-      );
-      await transaction.wait();
-      console.log("Minting complete!");
+
+      const { contract } = await getContract()
+      const transaction = await contract.mintCertificate(walletAddress, tokenURI)
+      await transaction.wait()
+
+      // Mark as minted in the database
+      await axios.put(`http://localhost:3001/api/submissions/${selectedNFT._id}/minted`)
+
+      // Update local state to remove the minted certificate
+      setApprovedSubmissions((prevSubmissions) =>
+        prevSubmissions.filter((submission) => submission._id !== selectedNFT._id),
+      )
+
+      // Show success notification
+      showNotification("NFT berhasil diminting!", "success")
+
+      console.log("Minting complete!")
     } catch (error) {
-      console.error("Minting failed:", error);
-      alert(`Minting failed: ${error.message}`);
+      console.error("Minting failed:", error)
+
+      // Show error notification
+      showNotification(`Minting gagal: ${error.message}`, "error")
     } finally {
-      setIsMinting(false);
-      closeModal();
+      setIsMinting(false)
+      closeModal()
     }
-  };
+  }
 
   const handleAgree = () => {
-    setHasAgreed(true);
-    setShowTerms(false);
-  };
+    setHasAgreed(true)
+    setShowTerms(false)
+  }
 
   const scannerStyles = `
     @keyframes scan {
@@ -188,27 +183,25 @@ const Minting = ({ walletAddress }) => {
         clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
       }
     }
-  `;
+  `
 
   if (loading) {
-    return <p>Loading...</p>;
+    return <p>Loading...</p>
   }
 
-  const filteredSubmissions = approvedSubmissions.filter(
-    (submission) => submission.nim === studentData.nim
-  );
+  const filteredSubmissions = approvedSubmissions.filter((submission) => submission.nim === studentData.nim)
 
   return (
     <div className="flex min-h-screen bg-white">
+      {/* Notification Component */}
+      {NotificationComponent}
+
       <style>{scannerStyles}</style>
       {/* Sidebar */}
       <div className="w-64 bg-yellow-300 p-6 flex flex-col fixed h-screen">
         {/* Logo */}
         <div className="flex items-center gap-2 mb-12">
-          <img
-            src={logoSatriaUnsri || "/placeholder.svg"}
-            alt="Satria UNSRI Logo"
-          />
+          <img src={logoSatriaUnsri || "/placeholder.svg"} alt="Satria UNSRI Logo" />
         </div>
 
         {/* Navigation */}
@@ -272,13 +265,9 @@ const Minting = ({ walletAddress }) => {
         {/* Header */}
         <div className="flex justify-end items-center mb-8">
           <div className="flex items-center gap-2">
-            <span className="px-3 py-1 bg-yellow-300 rounded-full text-sm">
-              Connected
-            </span>
+            <span className="px-3 py-1 bg-yellow-300 rounded-full text-sm">Connected</span>
             <span className="px-3 py-1 bg-black text-white rounded-full text-sm">
-              {walletAddress
-                ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-                : "Not Connected"}
+              {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : "Not Connected"}
             </span>
           </div>
         </div>
@@ -299,12 +288,9 @@ const Minting = ({ walletAddress }) => {
         {filteredSubmissions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
             <Certificate size={64} className="text-gray-400 mb-4" />
-            <h3 className="text-xl font-medium text-gray-900 mb-2">
-              You have no certificate to mint
-            </h3>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">You have no certificate to mint</h3>
             <p className="text-gray-500 text-center max-w-md mb-6">
-              Upload your certificates through the Input Sertifikat page and
-              wait for admin approval before minting.
+              Upload your certificates through the Input Sertifikat page and wait for admin approval before minting.
             </p>
             <button
               onClick={handleInputSertifikat}
@@ -326,9 +312,7 @@ const Minting = ({ walletAddress }) => {
                   <img
                     src={
                       metadataImageUrls[submission._id] ||
-                      (submission.imageUrl
-                        ? getGatewayUrl(submission.imageUrl)
-                        : imageDefault)
+                      (submission.imageUrl ? getGatewayUrl(submission.imageUrl) : imageDefault)
                     }
                     alt={`NFT ${submission._id}`}
                     className="max-w-full max-h-full object-contain rounded-lg"
@@ -352,20 +336,16 @@ const Minting = ({ walletAddress }) => {
               <h2 className="text-2xl font-bold mb-6">Terms & Condition</h2>
               <div className="space-y-4 mb-6">
                 <p className="text-sm">
-                  1. Sertifikat yang dihasilkan dari proses minting telah
-                  dikonversi ke dalam format NFT (Non-Fungible Token) sesuai
-                  standar blockchain Ethereum dengan mekanisme Proof of
-                  Authority.
+                  1. Sertifikat yang dihasilkan dari proses minting telah dikonversi ke dalam format NFT (Non-Fungible
+                  Token) sesuai standar blockchain Ethereum dengan mekanisme Proof of Authority.
                 </p>
                 <p className="text-sm">
-                  2. Sertifikat yang diminting telah melalui proses validasi
-                  oleh admin universitas dan dijamin sesuai dengan data yang
-                  tersimpan dalam database lokal universitas.
+                  2. Sertifikat yang diminting telah melalui proses validasi oleh admin universitas dan dijamin sesuai
+                  dengan data yang tersimpan dalam database lokal universitas.
                 </p>
                 <p className="text-sm">
-                  3. Setelah proses minting selesai, sertifikat NFT akan
-                  terstandardisasi dan hanya dapat diakses melalui aplikasi
-                  SATRIA UNSRI menggunakan wallet terverifikasi pengguna.
+                  3. Setelah proses minting selesai, sertifikat NFT akan terstandardisasi dan hanya dapat diakses
+                  melalui aplikasi SATRIA UNSRI menggunakan wallet terverifikasi pengguna.
                 </p>
               </div>
               <button
@@ -382,10 +362,7 @@ const Minting = ({ walletAddress }) => {
         {selectedNFT && !showTerms && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg max-w-4xl w-full overflow-hidden relative">
-              <button
-                onClick={closeModal}
-                className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded-full z-50"
-              >
+              <button onClick={closeModal} className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded-full z-50">
                 <X size={24} />
               </button>
 
@@ -396,9 +373,7 @@ const Minting = ({ walletAddress }) => {
                     <img
                       src={
                         metadataImageUrls[selectedNFT._id] ||
-                        (selectedNFT.imageUrl
-                          ? getGatewayUrl(selectedNFT.imageUrl)
-                          : imageDefault)
+                        (selectedNFT.imageUrl ? getGatewayUrl(selectedNFT.imageUrl) : imageDefault)
                       }
                       alt="NFT Preview"
                       className="w-full max-h-full object-contain rounded-lg"
@@ -423,37 +398,27 @@ const Minting = ({ walletAddress }) => {
                 <div className="w-full md:w-1/2 p-8 bg-gray-50">
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500">
-                        Nama
-                      </h3>
+                      <h3 className="text-sm font-medium text-gray-500">Nama</h3>
                       <p className="mt-1">{selectedNFT.studentName}</p>
                     </div>
 
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500">
-                        Jenis Sertifikat
-                      </h3>
+                      <h3 className="text-sm font-medium text-gray-500">Jenis Sertifikat</h3>
                       <p className="mt-1">{selectedNFT.type}</p>
                     </div>
 
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500">
-                        Tahun
-                      </h3>
+                      <h3 className="text-sm font-medium text-gray-500">Tahun</h3>
                       <p className="mt-1">{selectedNFT.tahunKegiatan}</p>
                     </div>
 
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500">
-                        Nama Kegiatan
-                      </h3>
+                      <h3 className="text-sm font-medium text-gray-500">Nama Kegiatan</h3>
                       <p className="mt-1">{selectedNFT.namaKegiatan}</p>
                     </div>
 
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500">
-                        Note
-                      </h3>
+                      <h3 className="text-sm font-medium text-gray-500">Note</h3>
                       <p className="mt-1">{selectedNFT.note}</p>
                     </div>
 
@@ -472,7 +437,8 @@ const Minting = ({ walletAddress }) => {
         )}
       </main>
     </div>
-  );
-};
+  )
+}
 
-export default Minting;
+export default Minting
+

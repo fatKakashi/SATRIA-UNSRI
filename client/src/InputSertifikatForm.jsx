@@ -1,59 +1,54 @@
-import React, { useContext, useEffect, useState } from "react";
-import {
-  User,
-  Home,
-  Upload,
-  LogOut,
-  ChevronDown,
-  CloudDownload,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import logoSatriaUnsri from "./assets/images/Satria Unsri.png";
-import { StudentContext } from "./StudentContext.jsx";
-import axios from "axios";
+"use client"
+
+import { useContext, useEffect, useState } from "react"
+import { User, Home, Upload, LogOut, ChevronDown, CloudDownload } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import logoSatriaUnsri from "./assets/images/Satria Unsri.png"
+import { StudentContext } from "./StudentContext.jsx"
+import axios from "axios"
+import { useNotification } from "./notification.jsx"
 
 const InputSertifikatForm = ({ walletAddress }) => {
-  const Navigate = useNavigate();
-  const { studentData, setStudentData } = useContext(StudentContext);
-  const [loading, setLoading] = useState(true);
+  const Navigate = useNavigate()
+  const { studentData, setStudentData } = useContext(StudentContext)
+  const [loading, setLoading] = useState(true)
+  const { showNotification, NotificationComponent } = useNotification()
 
   useEffect(() => {
     const fetchStudentData = async () => {
       try {
-        const nim = localStorage.getItem("nim");
+        const nim = localStorage.getItem("nim")
         if (nim) {
-          const response = await axios.get(
-            `http://localhost:3001/checkdatamahasiswa/${nim}`
-          );
-          setStudentData(response.data);
+          const response = await axios.get(`http://localhost:3001/checkdatamahasiswa/${nim}`)
+          setStudentData(response.data)
         }
-        setLoading(false);
+        setLoading(false)
       } catch (error) {
-        console.error("Error fetching student data:", error);
-        setLoading(false);
+        console.error("Error fetching student data:", error)
+        setLoading(false)
       }
-    };
+    }
 
     if (!studentData) {
-      fetchStudentData();
+      fetchStudentData()
     } else {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [studentData, setStudentData]);
+  }, [studentData, setStudentData])
 
   const handleDashboard = () => {
-    Navigate("/dashboard");
-  };
+    Navigate("/dashboard")
+  }
 
   const handleLogout = () => {
-    Navigate("/");
-  };
+    Navigate("/")
+  }
 
   const handleMinting = () => {
-    Navigate("/minting");
-  };
+    Navigate("/minting")
+  }
 
-  const [selectedFormType, setSelectedFormType] = useState("Prestasi Lomba");
+  const [selectedFormType, setSelectedFormType] = useState("Prestasi Lomba")
   const [formData, setFormData] = useState({
     namaKegiatan: "",
     tingkat: "",
@@ -68,57 +63,51 @@ const InputSertifikatForm = ({ walletAddress }) => {
     penyelenggara: "",
     namaPerusahaan: "",
     jabatan: "",
-  });
+  })
 
-  const formTypes = [
-    "Prestasi Lomba",
-    "Magang/Studi Independen",
-    "Seminar Keilmuan",
-    "Organisasi",
-  ];
+  const formTypes = ["Prestasi Lomba", "Magang/Studi Independen", "Seminar Keilmuan", "Organisasi"]
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }));
-  };
+    }))
+  }
 
   const handleFileChange = (name, file) => {
     setFormData((prev) => ({
       ...prev,
       [name]: file,
-    }));
-  };
+    }))
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
     if (!studentData) {
-      console.error("Student data is not available");
-      return;
+      console.error("Student data is not available")
+      return
     }
-    const data = new FormData();
+    const data = new FormData()
     for (const key in formData) {
-      data.append(key, formData[key]);
+      data.append(key, formData[key])
     }
-    data.append("nim", studentData.nim);
+    data.append("nim", studentData.nim)
 
-    let endpoint;
+    let endpoint
     switch (selectedFormType) {
       case "Magang/Studi Independen":
-        endpoint =
-          "http://localhost:3001/api/sertifikat/magang-studi-independen";
-        break;
+        endpoint = "http://localhost:3001/api/sertifikat/magang-studi-independen"
+        break
       case "Organisasi":
-        endpoint = "http://localhost:3001/api/sertifikat/organisasi";
-        break;
+        endpoint = "http://localhost:3001/api/sertifikat/organisasi"
+        break
       case "Seminar Keilmuan":
-        endpoint = "http://localhost:3001/api/sertifikat/seminar-keilmuan";
-        break;
+        endpoint = "http://localhost:3001/api/sertifikat/seminar-keilmuan"
+        break
       default:
-        endpoint = "http://localhost:3001/api/sertifikat/prestasi-lomba";
+        endpoint = "http://localhost:3001/api/sertifikat/prestasi-lomba"
     }
 
     try {
@@ -126,15 +115,38 @@ const InputSertifikatForm = ({ walletAddress }) => {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      });
-      console.log(response.data);
+      })
+      console.log(response.data)
+
+      // Show success notification
+      showNotification("Sertifikat berhasil disubmit!", "success")
+
+      // Reset form after successful submission
+      setFormData({
+        namaKegiatan: "",
+        tingkat: "",
+        tahunKegiatan: "",
+        fotoSertifikat: null,
+        dokumenPendukung: null,
+        prestasiLomba: "",
+        namaPrestasi: "",
+        namaOrganisasi: "",
+        namaSeminar: "",
+        posisi: "",
+        penyelenggara: "",
+        namaPerusahaan: "",
+        jabatan: "",
+      })
     } catch (error) {
-      console.log("Error submitting form:", error);
+      console.log("Error submitting form:", error)
       if (error.response) {
-        console.log("Server responded with:", error.response.data);
+        console.log("Server responded with:", error.response.data)
       }
+
+      // Show error notification
+      showNotification("Gagal mengirim sertifikat. Silakan coba lagi.", "error")
     }
-  };
+  }
 
   const renderFormFields = () => {
     switch (selectedFormType) {
@@ -178,7 +190,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
               />
             </div>
           </>
-        );
+        )
       case "Organisasi":
         return (
           <>
@@ -234,7 +246,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
               />
             </div>
           </>
-        );
+        )
       case "Seminar Keilmuan":
         return (
           <>
@@ -275,7 +287,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
               />
             </div>
           </>
-        );
+        )
       default:
         return (
           <>
@@ -357,19 +369,22 @@ const InputSertifikatForm = ({ walletAddress }) => {
               />
             </div>
           </>
-        );
+        )
     }
-  };
+  }
 
   if (loading) {
-    return <p>Loading...</p>;
+    return <p>Loading...</p>
   }
 
   return (
     <div className="flex h-screen bg-white">
+      {/* Render the notification component */}
+      {NotificationComponent}
+
       <div className="w-64 bg-yellow-300 p-6 flex flex-col fixed h-screen">
         <div className="flex items-center gap-2 mb-12">
-          <img src={logoSatriaUnsri} alt="logo Satria Unsri" />
+          <img src={logoSatriaUnsri || "/placeholder.svg"} alt="logo Satria Unsri" />
         </div>
         <nav className="flex-1">
           <div className="space-y-2">
@@ -421,13 +436,9 @@ const InputSertifikatForm = ({ walletAddress }) => {
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-2xl font-bold">Input Sertifikat</h1>
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1 bg-yellow-300 rounded-full text-sm">
-                Connected
-              </span>
+              <span className="px-3 py-1 bg-yellow-300 rounded-full text-sm">Connected</span>
               <span className="px-3 py-1 bg-black text-white rounded-full text-sm">
-                {walletAddress
-                  ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-                  : "Not Connected"}
+                {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : "Not Connected"}
               </span>
             </div>
           </div>
@@ -447,10 +458,7 @@ const InputSertifikatForm = ({ walletAddress }) => {
               <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
             </div>
           </div>
-          <form
-            onSubmit={handleSubmit}
-            className="bg-gray-800 rounded-xl p-6 text-white"
-          >
+          <form onSubmit={handleSubmit} className="bg-gray-800 rounded-xl p-6 text-white">
             <div className="space-y-6">
               {renderFormFields()}
               <div className="grid grid-cols-2 gap-6">
@@ -459,22 +467,15 @@ const InputSertifikatForm = ({ walletAddress }) => {
                   <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 text-center">
                     <input
                       type="file"
-                      onChange={(e) =>
-                        handleFileChange("fotoSertifikat", e.target.files[0])
-                      }
+                      onChange={(e) => handleFileChange("fotoSertifikat", e.target.files[0])}
                       className="hidden"
                       id="fotoSertifikat"
                     />
                     <label htmlFor="fotoSertifikat" className="cursor-pointer">
                       <Upload className="mx-auto mb-2" />
-                      <p className="text-sm text-gray-300">
-                        Drag your file(s) to start uploading
-                      </p>
+                      <p className="text-sm text-gray-300">Drag your file(s) to start uploading</p>
                       <p className="text-sm text-gray-400 mt-1">OR</p>
-                      <button
-                        type="button"
-                        className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm"
-                      >
+                      <button type="button" className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">
                         Browse files
                       </button>
                     </label>
@@ -485,25 +486,15 @@ const InputSertifikatForm = ({ walletAddress }) => {
                   <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 text-center">
                     <input
                       type="file"
-                      onChange={(e) =>
-                        handleFileChange("dokumenPendukung", e.target.files[0])
-                      }
+                      onChange={(e) => handleFileChange("dokumenPendukung", e.target.files[0])}
                       className="hidden"
                       id="dokumenPendukung"
                     />
-                    <label
-                      htmlFor="dokumenPendukung"
-                      className="cursor-pointer"
-                    >
+                    <label htmlFor="dokumenPendukung" className="cursor-pointer">
                       <Upload className="mx-auto mb-2" />
-                      <p className="text-sm text-gray-300">
-                        Drag your file(s) to start uploading
-                      </p>
+                      <p className="text-sm text-gray-300">Drag your file(s) to start uploading</p>
                       <p className="text-sm text-gray-400 mt-1">OR</p>
-                      <button
-                        type="button"
-                        className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm"
-                      >
+                      <button type="button" className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">
                         Browse files
                       </button>
                     </label>
@@ -521,7 +512,8 @@ const InputSertifikatForm = ({ walletAddress }) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default InputSertifikatForm;
+export default InputSertifikatForm
+

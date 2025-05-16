@@ -23,6 +23,7 @@ const sertifikatOrganisasiSchema = new mongoose.Schema({
     },
     imageUrl:  String,
     metadataUrl: String,
+    minted: { type: Boolean, default: false },
 });
 
 const SertifikatOrganisasiModel = mongoose.model("SertifikatOrganisasi", sertifikatOrganisasiSchema);

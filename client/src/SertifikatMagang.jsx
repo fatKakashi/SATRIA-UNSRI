@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import { Medal } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";  // Import the UUID package
 
 export default function SertifikatMagang() {
-  const { id } = useParams(); // get certificate id from URL params
+  const { id } = useParams(); // Get certificate id from URL params
   const [certificate, setCertificate] = useState(null);
 
   useEffect(() => {
@@ -18,6 +19,10 @@ export default function SertifikatMagang() {
             submission.type === "magang_studi_independen" &&
             submission.status === "approved"
         );
+        if (matchedCertificate) {
+          // Add a unique Credential ID for the certificate
+          matchedCertificate.credentialId = uuidv4();
+        }
         setCertificate(matchedCertificate);
       } catch (error) {
         console.error("Error fetching certificate:", error);
@@ -38,7 +43,6 @@ export default function SertifikatMagang() {
     >
       {/* Border Frame */}
       <div className="absolute inset-4 border-2 border-yellow-400" />
-      
       {/* Corner Decorations */}
       <div className="absolute top-8 left-8 w-24 h-24 border-t-4 border-l-4 border-yellow-400" />
       <div className="absolute top-8 right-8 w-24 h-24 border-t-4 border-r-4 border-yellow-400" />
@@ -136,10 +140,14 @@ export default function SertifikatMagang() {
             {certificate.studentName}
           </h3>
           <p className="text-white text-lg leading-relaxed">
-            This certificate is given for the achievement in the field of Blockchain Development 
-            and proves competency in Web3 technologies and smart contract development.
+            This certificate is awarded for the contribution as {certificate.posisi} at {certificate.namaPerusahaan} in {certificate.tahunKegiatan}, demonstrating excellence and competency in the field.
           </p>
         </div>
+
+        {/* Credential ID */}
+        <p className="text-sm text-gray-400 mt-4">
+          <strong>Credential ID:</strong> {certificate.credentialId}
+        </p>
 
         {/* Footer */}
         <div className="w-full flex items-center justify-between mt-8 px-12">

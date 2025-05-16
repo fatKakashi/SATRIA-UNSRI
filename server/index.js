@@ -95,8 +95,12 @@ app.post(
         ...certificateData,
         nim,
         studentName: student.name,
-        fotoSertifikat: req.files.fotoSertifikat ? req.files.fotoSertifikat[0].path : null,
-        dokumenPendukung: req.files.dokumenPendukung ? req.files.dokumenPendukung[0].path : null,
+        fotoSertifikat: req.files.fotoSertifikat
+          ? req.files.fotoSertifikat[0].path
+          : null,
+        dokumenPendukung: req.files.dokumenPendukung
+          ? req.files.dokumenPendukung[0].path
+          : null,
       });
 
       await newSertifikat.save();
@@ -125,8 +129,12 @@ app.post(
         ...certificateData,
         nim,
         studentName: student.name,
-        fotoSertifikat: req.files.fotoSertifikat ? req.files.fotoSertifikat[0].path : null,
-        dokumenPendukung: req.files.dokumenPendukung ? req.files.dokumenPendukung[0].path : null,
+        fotoSertifikat: req.files.fotoSertifikat
+          ? req.files.fotoSertifikat[0].path
+          : null,
+        dokumenPendukung: req.files.dokumenPendukung
+          ? req.files.dokumenPendukung[0].path
+          : null,
       });
       await newSertifikat.save();
       res.status(201).json(newSertifikat);
@@ -154,8 +162,12 @@ app.post(
         ...certificateData,
         nim,
         studentName: student.name,
-        fotoSertifikat: req.files.fotoSertifikat ? req.files.fotoSertifikat[0].path : null,
-        dokumenPendukung: req.files.dokumenPendukung ? req.files.dokumenPendukung[0].path : null,
+        fotoSertifikat: req.files.fotoSertifikat
+          ? req.files.fotoSertifikat[0].path
+          : null,
+        dokumenPendukung: req.files.dokumenPendukung
+          ? req.files.dokumenPendukung[0].path
+          : null,
       });
       await newSertifikat.save();
       res.status(201).json(newSertifikat);
@@ -183,8 +195,12 @@ app.post(
         ...certificateData,
         nim,
         studentName: student.name,
-        fotoSertifikat: req.files.fotoSertifikat ? req.files.fotoSertifikat[0].path : null,
-        dokumenPendukung: req.files.dokumenPendukung ? req.files.dokumenPendukung[0].path : null,
+        fotoSertifikat: req.files.fotoSertifikat
+          ? req.files.fotoSertifikat[0].path
+          : null,
+        dokumenPendukung: req.files.dokumenPendukung
+          ? req.files.dokumenPendukung[0].path
+          : null,
       });
       await newSertifikat.save();
       res.status(201).json(newSertifikat);
@@ -203,13 +219,15 @@ app.get("/api/submissions", async (req, res) => {
     const keilmuan = await sertifikatKeilmuanModel.find();
     const mbkm = await sertifikatMBKMModel.find();
 
-    const submissions = [...prestasi, ...organisasi, ...keilmuan, ...mbkm].map((submission) => {
-      return {
-        ...submission._doc,
-        fotoSertifikat: submission.fotoSertifikat.replace(/\\/g, "/"),
-        dokumenPendukung: submission.dokumenPendukung.replace(/\\/g, "/"),
-      };
-    });
+    const submissions = [...prestasi, ...organisasi, ...keilmuan, ...mbkm].map(
+      (submission) => {
+        return {
+          ...submission._doc,
+          fotoSertifikat: submission.fotoSertifikat.replace(/\\/g, "/"),
+          dokumenPendukung: submission.dokumenPendukung.replace(/\\/g, "/"),
+        };
+      }
+    );
 
     res.status(200).json(submissions);
   } catch (error) {
@@ -220,18 +238,36 @@ app.get("/api/submissions", async (req, res) => {
 
 app.get("/api/submissions/approved", async (req, res) => {
   try {
-    const prestasi = await SertifikatPrestasiModel.find({ status: "approved" });
-    const organisasi = await SertifikatOrganisasiModel.find({ status: "approved" });
-    const keilmuan = await sertifikatKeilmuanModel.find({ status: "approved" });
-    const mbkm = await sertifikatMBKMModel.find({ status: "approved" });
-
-    const submissions = [...prestasi, ...organisasi, ...keilmuan, ...mbkm].map((submission) => {
-      return {
-        ...submission._doc,
-        fotoSertifikat: submission.fotoSertifikat ? submission.fotoSertifikat.replace(/\\/g, "/") : null,
-        dokumenPendukung: submission.dokumenPendukung ? submission.dokumenPendukung.replace(/\\/g, "/") : null,
-      };
+    const prestasi = await SertifikatPrestasiModel.find({
+      status: "approved",
+      minted: { $ne: true },
     });
+    const organisasi = await SertifikatOrganisasiModel.find({
+      status: "approved",
+      minted: { $ne: true },
+    });
+    const keilmuan = await sertifikatKeilmuanModel.find({
+      status: "approved",
+      minted: { $ne: true },
+    });
+    const mbkm = await sertifikatMBKMModel.find({
+      status: "approved",
+      minted: { $ne: true },
+    });
+
+    const submissions = [...prestasi, ...organisasi, ...keilmuan, ...mbkm].map(
+      (submission) => {
+        return {
+          ...submission._doc,
+          fotoSertifikat: submission.fotoSertifikat
+            ? submission.fotoSertifikat.replace(/\\/g, "/")
+            : null,
+          dokumenPendukung: submission.dokumenPendukung
+            ? submission.dokumenPendukung.replace(/\\/g, "/")
+            : null,
+        };
+      }
+    );
 
     res.status(200).json(submissions);
   } catch (error) {
@@ -240,11 +276,9 @@ app.get("/api/submissions/approved", async (req, res) => {
   }
 });
 
-// Updated approval endpoint integrating IPFS upload
-app.put("/api/submissions/:id/status", async (req, res) => {
+app.put("/api/submissions/:id/minted", async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
-  
+
   try {
     const submission =
       (await SertifikatPrestasiModel.findById(id)) ||
@@ -256,10 +290,105 @@ app.put("/api/submissions/:id/status", async (req, res) => {
       return res.status(404).json({ message: "Submission not found" });
     }
 
+    submission.minted = true;
+    await submission.save();
+
+    res.status(200).json(submission);
+  } catch (error) {
+    console.error("Error updating minted status:", error);
+    res.status(500).json({ message: "An error occurred", error });
+  }
+});
+
+// Backend: New endpoint to get ALL minted certificates
+app.get("/api/submissions/minted", async (req, res) => {
+  try {
+    const prestasi = await SertifikatPrestasiModel.find({ minted: true });
+    const organisasi = await SertifikatOrganisasiModel.find({ minted: true });
+    const keilmuan = await sertifikatKeilmuanModel.find({ minted: true });
+    const mbkm = await sertifikatMBKMModel.find({ minted: true });
+
+    const submissions = [...prestasi, ...organisasi, ...keilmuan, ...mbkm].map(
+      (submission) => ({
+        ...submission._doc,
+        fotoSertifikat: submission.fotoSertifikat?.replace(/\\/g, "/"),
+        dokumenPendukung: submission.dokumenPendukung?.replace(/\\/g, "/"),
+      })
+    );
+
+    res.status(200).json(submissions);
+  } catch (error) {
+    console.error("Error fetching all minted submissions:", error);
+    res.status(500).json({ message: "An error occurred", error });
+  }
+});
+
+app.get("/api/submissions/minted/:nim", async (req, res) => {
+  const { nim } = req.params;
+
+  try {
+    const prestasi = await SertifikatPrestasiModel.find({
+      nim,
+      minted: true,
+    });
+    const organisasi = await SertifikatOrganisasiModel.find({
+      nim,
+      minted: true,
+    });
+    const keilmuan = await sertifikatKeilmuanModel.find({
+      nim,
+      minted: true,
+    });
+    const mbkm = await sertifikatMBKMModel.find({
+      nim,
+      minted: true,
+    });
+
+    const submissions = [...prestasi, ...organisasi, ...keilmuan, ...mbkm].map(
+      (submission) => {
+        return {
+          ...submission._doc,
+          fotoSertifikat: submission.fotoSertifikat
+            ? submission.fotoSertifikat.replace(/\\/g, "/")
+            : null,
+          dokumenPendukung: submission.dokumenPendukung
+            ? submission.dokumenPendukung.replace(/\\/g, "/")
+            : null,
+        };
+      }
+    );
+
+    res.status(200).json(submissions);
+  } catch (error) {
+    console.error("Error fetching minted submissions:", error);
+    res.status(500).json({ message: "An error occurred", error });
+  }
+});
+
+// Updated approval endpoint integrating IPFS upload
+app.put("/api/submissions/:id/status", async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    // find the submission across all collections
+    const submission =
+      (await SertifikatPrestasiModel.findById(id)) ||
+      (await SertifikatOrganisasiModel.findById(id)) ||
+      (await sertifikatKeilmuanModel.findById(id)) ||
+      (await sertifikatMBKMModel.findById(id));
+
+    if (!submission) {
+      return res.status(404).json({ message: "Submission not found" });
+    }
+
+    // update status
     submission.status = status;
     await submission.save();
 
+    // when approved, generate, upload, and attach metadata
     if (status === "approved") {
+      // determine which front-end URL to screenshot
       let certificateUrl;
       switch (submission.type) {
         case "prestasi_lomba":
@@ -279,78 +408,142 @@ app.put("/api/submissions/:id/status", async (req, res) => {
       }
 
       console.log(`Generating certificate from: ${certificateUrl}`);
-
       const browser = await puppeteer.launch({
         headless: true,
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
-          "--disable-web-security"
+          "--disable-web-security",
         ],
-        defaultViewport: { width: 1200, height: 800 }
+        defaultViewport: { width: 1200, height: 800 },
       });
-
       const page = await browser.newPage();
-      
       await page.goto(certificateUrl, {
         waitUntil: "networkidle2",
-        timeout: 60000
+        timeout: 60000,
       });
-
-      await page.waitForFunction(() => document.readyState === "complete", { timeout: 30000 });
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await page.waitForFunction(() => document.readyState === "complete", {
+        timeout: 30000,
+      });
+      await new Promise((r) => setTimeout(r, 1000));
 
       const certificateElement = await page.$("#certificate-container");
-      if (!certificateElement) {
+      if (!certificateElement)
         throw new Error("Certificate container not found");
-      }
-      const boundingBox = await certificateElement.boundingBox();
-
+      const box = await certificateElement.boundingBox();
       const imageBuffer = await page.screenshot({
         type: "png",
-        clip: {
-          x: boundingBox.x,
-          y: boundingBox.y,
-          width: boundingBox.width,
-          height: boundingBox.height
-        }
+        clip: { x: box.x, y: box.y, width: box.width, height: box.height },
       });
-      
       await browser.close();
 
+      // save & upload image
       const imageName = `certificate-${id}-${uuidv4()}.png`;
       const imagePath = path.join(uploadDir, imageName);
-
-      // Save the image locally
       fs.writeFileSync(imagePath, imageBuffer);
-
-      // Upload the image to IPFS using Pinata
       const imageResult = await uploadFileToIPFS(imagePath);
 
-      // Create metadata with gateway URLs
-      const metadata = {
-        name: `${submission.studentName}'s Certificate`,
-        description: `Certificate for ${submission.type} achievement`,
-        image: imageResult.gatewayUrl, // Use gateway URL for image
-        external_url: imageResult.gatewayUrl,
-        attributes: [
-          { trait_type: "Type", value: submission.type },
-          { trait_type: "Year", value: submission.tahunKegiatan || "N/A" }
-        ]
-      };
+      // build metadata dynamically
+      const { type, studentName } = submission;
+      const image = imageResult.gatewayUrl;
+      let metadata;
 
-      // Upload metadata to IPFS using Pinata
+      switch (type) {
+        case "prestasi_lomba": {
+          const {
+            namaKegiatan,
+            prestasiLomba,
+            namaPrestasi,
+            penyelenggara,
+            tahunKegiatan,
+            tingkat,
+          } = submission;
+          metadata = {
+            name: `${studentName} – ${namaPrestasi}`,
+            description: `Achieved ${namaPrestasi} at ${namaKegiatan} (${prestasiLomba}), organized by ${penyelenggara}`,
+            image,
+            external_url: image,
+            attributes: [
+              { trait_type: "Category", value: prestasiLomba },
+              { trait_type: "Event Name", value: namaKegiatan },
+              { trait_type: "Achievement", value: namaPrestasi },
+              { trait_type: "Organizer", value: penyelenggara },
+              { trait_type: "Level", value: tingkat },
+              { trait_type: "Year", value: tahunKegiatan || "N/A" },
+            ],
+          };
+          break;
+        }
+        case "organisasi": {
+          const { namaOrganisasi, jabatan, tingkat, tahunKegiatan } =
+            submission;
+          metadata = {
+            name: `${studentName} – ${jabatan} of ${namaOrganisasi}`,
+            description: `Served as ${jabatan} in ${namaOrganisasi}`,
+            image,
+            external_url: image,
+            attributes: [
+              { trait_type: "Organization", value: namaOrganisasi },
+              { trait_type: "Position", value: jabatan },
+              { trait_type: "Level", value: tingkat },
+              { trait_type: "Year", value: tahunKegiatan || "N/A" },
+            ],
+          };
+          break;
+        }
+        case "seminar_keilmuan": {
+          const { namaKegiatan, penyelenggara, tahunKegiatan } = submission;
+          metadata = {
+            name: `${studentName} – Seminar: ${namaKegiatan}`,
+            description: `Participated in "${namaKegiatan}" by ${penyelenggara}`,
+            image,
+            external_url: image,
+            attributes: [
+              { trait_type: "Seminar Name", value: namaKegiatan },
+              { trait_type: "Organizer", value: penyelenggara },
+              { trait_type: "Year", value: tahunKegiatan || "N/A" },
+            ],
+          };
+          break;
+        }
+        case "magang_studi_independen": {
+          const { namaPerusahaan, posisi, tahunKegiatan } = submission;
+          metadata = {
+            name: `${studentName} – Internship at ${namaPerusahaan}`,
+            description: `Interned as ${posisi} at ${namaPerusahaan}`,
+            image,
+            external_url: image,
+            attributes: [
+              { trait_type: "Company", value: namaPerusahaan },
+              { trait_type: "Position", value: posisi },
+              { trait_type: "Year", value: tahunKegiatan || "N/A" },
+            ],
+          };
+          break;
+        }
+        default:
+          metadata = {
+            name: `${studentName}'s Certificate`,
+            description: `Certificate for ${type}`,
+            image,
+            external_url: image,
+            attributes: [
+              { trait_type: "Type", value: type },
+              { trait_type: "Year", value: submission.tahunKegiatan || "N/A" },
+            ],
+          };
+      }
+
+      // upload metadata and save URLs
       const metadataResult = await uploadJSONToIPFS(metadata);
-
-      // Update submission with both IPFS URI and gateway URL
-      submission.imageUrl = imageResult.gatewayUrl;
-      submission.metadataUrl = metadataResult.ipfsUri; // Keep using ipfs:// for contract
-      submission.imageGatewayUrl = imageResult.gatewayUrl;
+      submission.imageUrl = image;
+      submission.metadataUrl = metadataResult.ipfsUri;
+      submission.imageGatewayUrl = image;
       submission.metadataGatewayUrl = metadataResult.gatewayUrl;
       await submission.save();
-      
+
       console.log(`Metadata uploaded to IPFS: ${metadataResult.ipfsUri}`);
-      console.log(`Metadata gateway URL: ${metadataResult.gatewayUrl}`);
+      console.log(`Gateway URL: ${metadataResult.gatewayUrl}`);
     }
 
     res.status(200).json(submission);
@@ -359,7 +552,6 @@ app.put("/api/submissions/:id/status", async (req, res) => {
     res.status(500).json({ message: "An error occurred", error });
   }
 });
-
 
 app.listen(3001, () => {
   console.log("Server is running on port 3001");

@@ -2,16 +2,17 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import { PencilIcon as CalligraphyIcon } from "lucide-react";
+import { v4 as uuidv4 } from 'uuid'; // Import uuid
 
 export default function SertifikatKeilmuan() {
   const { id } = useParams(); // get certificate id from URL params
   const [certificate, setCertificate] = useState(null);
+  const credentialId = uuidv4(); // Generate UUID once
 
   useEffect(() => {
     const fetchCertificate = async () => {
       try {
         const response = await axios.get("http://localhost:3001/api/submissions");
-        // Filter for a single certificate matching the id, type, and status
         const matchedCertificate = response.data.find(
           (submission) =>
             submission._id === id &&
@@ -69,14 +70,20 @@ export default function SertifikatKeilmuan() {
               {certificate.studentName}
             </h2>
             <p className="text-gray-700 leading-relaxed px-12">
-              For outstanding participation and valuable contribution in the Web Development Workshop Series. 
-              Your dedication and enthusiasm have significantly enriched our learning community.
+              In recognition of outstanding participation and valuable contribution to {certificate.namaKegiatan}, organized by {certificate.penyelenggara} in {certificate.tahunKegiatan}, this certificate is hereby awarded. Your commitment has greatly enhanced the success of the event.
             </p>
+
+            {/* Credential ID */}
+            <div className="mt-8">
+              <p className="text-sm text-gray-500">
+                Credential ID: <strong>{credentialId}</strong>
+              </p>
+            </div>
           </div>
 
           {/* Signature Section */}
           <div className="text-center">
-            <div className="w-64 border-t-2 border-black mt-16 pt-2">
+            <div className="w-64 border-t-2 border-black mt-8 pt-2">
               <p className="font-bold">David Anderson</p>
               <p className="text-sm text-gray-600">Workshop Director</p>
             </div>

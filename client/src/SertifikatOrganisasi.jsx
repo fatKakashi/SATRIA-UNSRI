@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
+import { v4 as uuidv4 } from 'uuid'; // Import uuid package
 
 export default function SertifikatOrganisasi() {
   const { id } = useParams(); // Get certificate id from URL
@@ -17,7 +18,12 @@ export default function SertifikatOrganisasi() {
             submission.type === "organisasi" &&
             submission.status === "approved"
         );
-        setCertificate(matchedCertificate);
+
+        // If certificate exists, add a unique UUID and include it in the certificate data
+        if (matchedCertificate) {
+          matchedCertificate.uuid = uuidv4();  // Add UUID as part of the certificate data
+          setCertificate(matchedCertificate);
+        }
       } catch (error) {
         console.error("Error fetching certificate:", error);
       }
@@ -37,7 +43,7 @@ export default function SertifikatOrganisasi() {
     >
       <div className="relative z-10 flex flex-col items-center h-full">
         {/* Background Stripes */}
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-blue-800 transform -skew-x-12" />
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-yellow-800 transform -skew-x-12" />
         <div className="absolute top-0 right-0 w-1/3 h-full bg-yellow-400 transform -skew-x-12 opacity-20" />
 
         {/* Header */}
@@ -59,31 +65,36 @@ export default function SertifikatOrganisasi() {
 
         {/* Recipient Name */}
         <div className="text-center mb-12 z-30">
-          <h2 className="text-4xl font-serif italic text-blue-800">
+          <h2 className="text-4xl font-serif italic text-yellow-400">
             {certificate.studentName}
           </h2>
         </div>
 
         {/* Certificate Text */}
         <div className="text-center max-w-2xl mb-16 z-20">
-          <p className="text-gray-700 leading-relaxed">
-            This certificate is awarded for outstanding achievements and 
-            exceptional contributions to organizational excellence, demonstrating 
-            remarkable leadership and dedication to professional growth.
+          <p className="text-black leading-relaxed">
+            In recognition of outstanding achievements and exceptional contributions to {certificate.namaOrganisasi}, this certificate is presented to {certificate.jabatan} at the {certificate.tingkat} level in {certificate.tahunKegiatan}, acknowledging remarkable leadership and dedication to professional growth.
+          </p>
+        </div>
+
+        {/* UUID (Credential ID) */}
+        <div className="text-center mt-4 z-20">
+          <p className="text-sm text-gray-500 italic">
+            Credential ID: <span className="text-yellow-400">{certificate.uuid}</span>
           </p>
         </div>
 
         {/* Signatures */}
         <div className="flex justify-center gap-24 mt-auto">
           <div className="text-center">
-            <div className="w-48 border-t border-yellow-400 pt-2" />
-            <p className="text-gray-800 mt-2">Robert Mitchell</p>
-            <p className="text-sm text-gray-600">CHIEF EXECUTIVE OFFICER</p>
+            <div className="w-48 border-t border-black pt-2" />
+            <p className="text-yellow-400 mt-2">Robert Mitchell</p>
+            <p className="text-sm text-yellow-400">CHIEF EXECUTIVE OFFICER</p>
           </div>
           <div className="text-center z-30">
-            <div className="w-48 border-t border-yellow-400 pt-2" />
-            <p className="text-gray-800 mt-2">Sarah Parker</p>
-            <p className="text-sm text-gray-600">BOARD DIRECTOR</p>
+            <div className="w-48 border-t border-black pt-2" />
+            <p className="text-yellow-400 mt-2">Sarah Parker</p>
+            <p className="text-sm text-yellow-400">BOARD DIRECTOR</p>
           </div>
         </div>
 

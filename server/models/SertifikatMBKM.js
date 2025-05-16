@@ -18,7 +18,8 @@ const sertifikatMBKMSchema = new mongoose.Schema({
         default: "magang_studi_independen"
     },
     imageUrl:  String,
-    metadataUrl: String
+    metadataUrl: String,
+    minted: { type: Boolean, default: false },
 });
 
 const sertifikatMBKMModel = mongoose.model("SertifikatMBKM", sertifikatMBKMSchema);

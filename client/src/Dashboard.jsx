@@ -1,5 +1,12 @@
 import { useContext, useState, useEffect } from "react";
-import { User, HomeIcon as House, Upload, LogOut, CloudDownload, X } from 'lucide-react';
+import {
+  User,
+  HomeIcon as House,
+  Upload,
+  LogOut,
+  CloudDownload,
+  X,
+} from "lucide-react";
 import logoSatriaUnsri from "./assets/images/Satria Unsri.png";
 import { useNavigate } from "react-router-dom";
 import imageDefault from "./assets/images/default image.jpg";
@@ -10,13 +17,22 @@ const Dashboard = ({ walletAddress }) => {
   const [selectedNFT, setSelectedNFT] = useState(null);
   const navigate = useNavigate();
   const { studentData, setStudentData } = useContext(StudentContext);
+  const [mintedNFTs, setMintedNFTs] = useState([]);
+  const [unmintedNFTs, setUnmintedNFTs] = useState([]);
+  const [stats, setStats] = useState({
+    minted: 0,
+    unminted: 0,
+    total: 0,
+  });
 
   useEffect(() => {
     const fetchStudentData = async () => {
       try {
         const nim = localStorage.getItem("nim");
         if (nim) {
-          const response = await axios.get(`http://localhost:3001/checkdatamahasiswa/${nim}`);
+          const response = await axios.get(
+            `http://localhost:3001/checkdatamahasiswa/${nim}`
+          );
           setStudentData(response.data);
         }
       } catch (error) {
@@ -28,6 +44,43 @@ const Dashboard = ({ walletAddress }) => {
       fetchStudentData();
     }
   }, [studentData, setStudentData]);
+
+  useEffect(() => {
+    const fetchNFTs = async () => {
+      try {
+        const nim = localStorage.getItem("nim");
+        if (nim) {
+          // Fetch minted NFTs
+          const mintedResponse = await axios.get(
+            `http://localhost:3001/api/submissions/minted/${nim}`
+          );
+          setMintedNFTs(mintedResponse.data);
+
+          // Fetch unminted but approved NFTs
+          const unmintedResponse = await axios.get(
+            `http://localhost:3001/api/submissions/approved`
+          );
+          const studentUnminted = unmintedResponse.data.filter(
+            (nft) => nft.nim === nim
+          );
+          setUnmintedNFTs(studentUnminted);
+
+          // Update stats
+          setStats({
+            minted: mintedResponse.data.length,
+            unminted: studentUnminted.length,
+            total: mintedResponse.data.length + studentUnminted.length,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching NFTs:", error);
+      }
+    };
+
+    if (studentData) {
+      fetchNFTs();
+    }
+  }, [studentData]);
 
   const handleLogout = () => {
     navigate("/");
@@ -47,13 +100,6 @@ const Dashboard = ({ walletAddress }) => {
 
   const closeModal = () => {
     setSelectedNFT(null);
-  };
-
-  // Data statistik NFT
-  const stats = {
-    minted: 4,
-    unminted: 12,
-    total: 16,
   };
 
   // Data placeholder untuk NFT overview
@@ -135,7 +181,8 @@ const Dashboard = ({ walletAddress }) => {
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-2xl font-bold">
-              Selamat Datang, {studentData ? studentData.name.split(" ").pop() : "Loading..."}
+              Selamat Datang,{" "}
+              {studentData ? studentData.name.split(" ").pop() : "Loading..."}
             </h1>
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 bg-yellow-300 rounded-full text-sm">
@@ -183,14 +230,20 @@ const Dashboard = ({ walletAddress }) => {
 
             {/* NFT Grid */}
             <div className="grid grid-cols-4 gap-6">
-              {nftOverview.map((nft) => (
-                <div key={nft.id} className="p-4 border rounded-lg">
+              {mintedNFTs.map((nft) => (
+                <div key={nft._id} className="p-4 border rounded-lg">
                   <img
                     onClick={() => openModal(nft)}
-                    src={imageDefault}
+                    src={nft.imageGatewayUrl || nft.imageUrl || imageDefault}
                     alt="nft image"
-                    className="rounded-lg mb-4"
+                    className="rounded-lg mb-4 w-full h-48 object-cover"
                   />
+                  <div className="mt-2 text-sm font-medium">
+                    {nft.type}
+                    <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                      Minted
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -209,9 +262,13 @@ const Dashboard = ({ walletAddress }) => {
                     <div className="w-full md:w-1/2 p-8 relative">
                       <div className="relative">
                         <img
-                          src={imageDefault}
+                          src={
+                            selectedNFT.imageGatewayUrl ||
+                            selectedNFT.imageUrl ||
+                            imageDefault
+                          }
                           alt="NFT Preview"
-                          className="w-full aspect-square object-cover rounded-lg"
+                          className="w-full aspect-square object-contain rounded-lg"
                         />
                       </div>
                     </div>
@@ -223,28 +280,28 @@ const Dashboard = ({ walletAddress }) => {
                           <h3 className="text-sm font-medium text-gray-500">
                             Nama
                           </h3>
-                          <p className="mt-1">{selectedNFT.name}</p>
+                          <p className="mt-1">{selectedNFT.studentName}</p>
                         </div>
 
                         <div>
                           <h3 className="text-sm font-medium text-gray-500">
-                            Jenis Sertikast
+                            Jenis Sertifikat
                           </h3>
-                          <p className="mt-1">{selectedNFT.certificateType}</p>
+                          <p className="mt-1">{selectedNFT.type}</p>
                         </div>
 
                         <div>
                           <h3 className="text-sm font-medium text-gray-500">
                             Tahun
                           </h3>
-                          <p className="mt-1">{selectedNFT.year}</p>
+                          <p className="mt-1">{selectedNFT.tahunKegiatan}</p>
                         </div>
 
                         <div>
                           <h3 className="text-sm font-medium text-gray-500">
                             Nama Kegiatan
                           </h3>
-                          <p className="mt-1">{selectedNFT.activity}</p>
+                          <p className="mt-1">{selectedNFT.namaKegiatan}</p>
                         </div>
 
                         <div>
@@ -252,6 +309,12 @@ const Dashboard = ({ walletAddress }) => {
                             Note
                           </h3>
                           <p className="mt-1">{selectedNFT.note}</p>
+                        </div>
+
+                        <div className="mt-4">
+                          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full">
+                            Minted
+                          </span>
                         </div>
                       </div>
                     </div>
