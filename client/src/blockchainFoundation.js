@@ -2,7 +2,7 @@
   import { ethers } from "ethers";
   import CertificateNFTABI from "./abis/CertificateNFT.json";
 
-  const contractAddress = "0x42699A7612A82f1d9C36148af9C77354759b210b";
+  const contractAddress = "0x05d91B9031A655d08E654177336d08543ac4B711";
 
   export const getContract = async () => {
     if (typeof window !== "undefined" && window.ethereum) {

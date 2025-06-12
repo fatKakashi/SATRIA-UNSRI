@@ -464,6 +464,8 @@ app.put("/api/submissions/:id/status", async (req, res) => {
             image,
             external_url: image,
             attributes: [
+              { trait_type: "Type", value: "prestasi_lomba" },
+              { trait_type: "Student Name", value: studentName },
               { trait_type: "Category", value: prestasiLomba },
               { trait_type: "Event Name", value: namaKegiatan },
               { trait_type: "Achievement", value: namaPrestasi },
@@ -483,6 +485,8 @@ app.put("/api/submissions/:id/status", async (req, res) => {
             image,
             external_url: image,
             attributes: [
+              { trait_type: "Type", value: "organisasi" },
+              { trait_type: "Student Name", value: studentName },
               { trait_type: "Organization", value: namaOrganisasi },
               { trait_type: "Position", value: jabatan },
               { trait_type: "Level", value: tingkat },
@@ -499,6 +503,8 @@ app.put("/api/submissions/:id/status", async (req, res) => {
             image,
             external_url: image,
             attributes: [
+              { trait_type: "Type", value: "seminar_keilmuan" },
+              { trait_type: "Student Name", value: studentName },
               { trait_type: "Seminar Name", value: namaKegiatan },
               { trait_type: "Organizer", value: penyelenggara },
               { trait_type: "Year", value: tahunKegiatan || "N/A" },
@@ -514,6 +520,8 @@ app.put("/api/submissions/:id/status", async (req, res) => {
             image,
             external_url: image,
             attributes: [
+              { trait_type: "Type", value: "magang_studi_independen" },
+              { trait_type: "Student Name", value: studentName },
               { trait_type: "Company", value: namaPerusahaan },
               { trait_type: "Position", value: posisi },
               { trait_type: "Year", value: tahunKegiatan || "N/A" },
@@ -528,6 +536,7 @@ app.put("/api/submissions/:id/status", async (req, res) => {
             image,
             external_url: image,
             attributes: [
+              { trait_type: "Student Name", value: studentName },
               { trait_type: "Type", value: type },
               { trait_type: "Year", value: submission.tahunKegiatan || "N/A" },
             ],
